@@ -389,17 +389,23 @@ class _HomeTab extends StatelessWidget {
                       onTap: () {
                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                            child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(15),
-                          borderRadius: BorderRadius.circular(16)
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: isDark ? Colors.white.withAlpha(20) : Colors.black.withAlpha(10)),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withAlpha(isDark ? 30 : 8), blurRadius: 10, offset: const Offset(0, 4)),
+                          ],
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.search_rounded, color: isDark ? Colors.white54 : Colors.black54),
-                            const SizedBox(width: 12),
-                            Text('Search items, boxes, or tags', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 15)),
+                            Icon(Icons.search_rounded, color: isDark ? AppTheme.primaryColor.withAlpha(200) : AppTheme.primaryColor),
+                            const SizedBox(width: 16),
+                            Text('Search your inventory...', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 16, fontWeight: FontWeight.w500)),
+                            const Spacer(),
+                            Icon(Icons.tune_rounded, size: 20, color: isDark ? Colors.white24 : Colors.black26),
                           ],
                         ),
                       ),
@@ -414,28 +420,26 @@ class _HomeTab extends StatelessWidget {
                         physics: const BouncingScrollPhysics(),
                         clipBehavior: Clip.none,
                         children: [
-                          _buildHorizontalStatCard(context, 'Total Boxes', '${provider.totalBoxes}', Icons.inventory_2_rounded, AppTheme.primaryColor),
+                          _buildHorizontalStatCard(context, 'Boxes', '${provider.totalBoxes}', Icons.inventory_2_rounded, AppTheme.primaryColor),
                           const SizedBox(width: 12),
-                          _buildHorizontalStatCard(context, 'Total Items', '${provider.totalItems}', Icons.category_rounded, AppTheme.accentColor),
+                          _buildHorizontalStatCard(context, 'Items', '${provider.totalItems}', Icons.category_rounded, AppTheme.accentColor),
                           const SizedBox(width: 12),
                           _buildHorizontalStatCard(context, 'Low Stock', '${provider.lowStockItems.length}', Icons.warning_amber_rounded, AppTheme.errorColor),
-                          const SizedBox(width: 12),
-                          _buildHorizontalStatCard(context, 'Recently Added', '${provider.recentBoxes.length}', Icons.history_rounded, Colors.purple),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
-                    // 4️⃣ Quick Action Buttons
-                    const Text('Quick Actions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 12),
+                    // 4️⃣ Quick Hub
+                    const Text('Quick Hub', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                    const SizedBox(height: 16),
                     GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 2.5,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 2.2,
                       children: [
                         _buildactionTile(context, '+ Create Box', Icons.add_box_rounded, AppTheme.primaryColor, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
@@ -537,27 +541,49 @@ class _HomeTab extends StatelessWidget {
   Widget _buildHorizontalStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      width: 140,
-      padding: const EdgeInsets.all(16),
+      width: 150,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2A2A3E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withAlpha(40), width: 1.5),
         boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(isDark ? 51 : 13), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: color.withAlpha(isDark ? 30 : 20),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withAlpha(26),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.black87)),
-              Icon(icon, color: color, size: 20),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
+              ),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white54 : Colors.black54,
+                ),
+              ),
             ],
           ),
-          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -569,18 +595,33 @@ class _HomeTab extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2A2A3E) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withAlpha(isDark ? 51 : 13), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: Colors.black.withAlpha(isDark ? 40 : 10),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(width: 8),
-            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withAlpha(20),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
           ],
         ),
       ),
@@ -608,35 +649,43 @@ class _HomeTab extends StatelessWidget {
     
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Column(
+        return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader(context, 'Recent Activity'),
-        const SizedBox(height: 12),
+        const Text('Recent Activity', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+        const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2A2A3E) : Colors.white,
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
             boxShadow: [
               BoxShadow(color: Colors.black.withAlpha(isDark ? 51 : 13), blurRadius: 20, offset: const Offset(0, 10)),
             ],
           ),
           child: Column(
-            children: activities.map((activity) {
-              return ListTile(
-                dense: true,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _getActivityColor(activity.type).withAlpha(26),
-                    shape: BoxShape.circle,
+            children: activities.asMap().entries.map((entry) {
+              final activity = entry.value;
+              final isLast = entry.key == activities.length - 1;
+              return Column(
+                children: [
+                  ListTile(
+                    onTap: () {},
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: _getActivityColor(activity.type).withAlpha(26),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(_getActivityIcon(activity.type), color: _getActivityColor(activity.type), size: 18),
+                    ),
+                    title: Text(activity.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                    subtitle: Text(activity.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
+                    trailing: Text(_timeAgo(activity.timestamp), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey)),
                   ),
-                  child: Icon(_getActivityIcon(activity.type), color: _getActivityColor(activity.type), size: 16),
-                ),
-                title: Text(activity.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                subtitle: Text(activity.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.black54)),
-                trailing: Text(_timeAgo(activity.timestamp), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                  if (!isLast) Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10))),
+                ],
               );
             }).toList(),
           ),
