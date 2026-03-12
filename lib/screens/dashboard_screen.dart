@@ -157,6 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildBottomNav(BuildContext context) {
     return Consumer<InventoryProvider>(
       builder: (context, provider, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return NavigationBarTheme(
           data: NavigationBarThemeData(
             labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -196,12 +197,12 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               NavigationDestination(
                 icon: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6), // Slightly smaller
                   decoration: BoxDecoration(
                     color: AppTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.qr_code_scanner_rounded, size: 24, color: Colors.white),
+                  child: const Icon(Icons.qr_code_scanner_rounded, size: 22, color: Colors.white),
                 ),
                 label: provider.translate('Scan'),
               ),
@@ -435,7 +436,7 @@ class _HomeTab extends StatelessWidget {
 
                     // 3️⃣ Statistics Cards Section
                     SizedBox(
-                      height: 100,
+                      height: 150, // More headroom for padding and fonts
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
@@ -460,7 +461,7 @@ class _HomeTab extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: 2.2,
+                      childAspectRatio: 2.3, // Slightly taller to prevent text cut-off
                       children: [
                         _buildactionTile(context, '+ Create Box', Icons.add_box_rounded, AppTheme.primaryColor, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
@@ -561,89 +562,99 @@ class _HomeTab extends StatelessWidget {
 
   Widget _buildHorizontalStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: 150,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withAlpha(40), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: color.withAlpha(isDark ? 30 : 20),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withAlpha(26),
-              borderRadius: BorderRadius.circular(12),
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: 170, // Slightly wider
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withAlpha(40), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.withAlpha(isDark ? 30 : 20),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withAlpha(26),
+                borderRadius: BorderRadius.circular(12),
               ),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white54 : Colors.black54,
+              child: Icon(icon, color: color, size: 22),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
                 ),
-              ),
-            ],
-          ),
-        ],
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildactionTile(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(isDark ? 40 : 10),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withAlpha(20),
-                shape: BoxShape.circle,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(isDark ? 40 : 10),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-            ),
-          ],
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(20),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
