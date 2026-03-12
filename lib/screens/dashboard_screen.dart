@@ -374,41 +374,7 @@ class _HomeTab extends StatelessWidget {
               snap: true,
               toolbarHeight: 70,
               title: const Text('Boxwise', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
-              actions: [
-                Tooltip(
-                  message: 'Scan QR (Long press for QRs)',
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(50),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const QrScannerScreen()),
-                    ),
-                    onLongPress: () => _showGeneratedQRs(context, provider),
-                    child: const Padding(
-                      padding: EdgeInsets.all(12.0),
-                      child: Icon(Icons.qr_code_scanner_rounded),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.notifications_rounded),
-                  tooltip: 'Notifications',
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No new notifications')),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.settings_rounded),
-                  tooltip: 'Settings',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  ),
-                ),
-                const SizedBox(width: 4),
-              ],
+              actions: const [],
             ),
 
             // Content
