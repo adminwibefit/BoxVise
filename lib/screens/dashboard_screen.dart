@@ -174,7 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             }),
           ),
           child: NavigationBar(
-            height: 65,
+            height: 75,
             elevation: 0,
             backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
             selectedIndex: _currentIndex,
