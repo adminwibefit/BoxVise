@@ -178,208 +178,171 @@ class BoxCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected 
               ? AppTheme.primaryColor.withAlpha(26) 
-              : (isDark ? Colors.white.withAlpha(13) : Colors.white),
-          borderRadius: BorderRadius.circular(20),
+              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected 
                 ? AppTheme.primaryColor 
-                : (isDark ? Colors.white.withAlpha(20) : Colors.black.withAlpha(13)),
-            width: isSelected ? 2 : 1,
+                : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+            width: isSelected ? 2 : 1.5,
           ),
           boxShadow: isDark || isSelected
               ? []
               : [
                   BoxShadow(
-                    color: Colors.black.withAlpha(10),
+                    color: Colors.black.withAlpha(8),
                     blurRadius: 20,
-                    offset: const Offset(0, 4),
+                    offset: const Offset(0, 10),
                   ),
                 ],
         ),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Gradient color strip at top
-                Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        color,
-                        HSLColor.fromColor(color).withHue((HSLColor.fromColor(color).hue + 30) % 360).toColor(),
-                      ],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Graphic Accent
+                  Container(
+                    height: 5,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [color, color.withAlpha(128)],
+                      ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Box icon with color / cover image
-                      Container(
-                        padding: imagePath != null ? EdgeInsets.zero : const EdgeInsets.all(10),
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: color.withAlpha(38),
-                          borderRadius: BorderRadius.circular(12),
-                          image: imagePath != null && File(imagePath!).existsSync()
-                              ? DecorationImage(
-                                  image: FileImage(File(imagePath!)),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: imagePath == null
-                            ? Icon(Icons.inventory_2_rounded, color: color, size: 24)
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      // Name
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      // Location
-                      Row(
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 14,
-                            color: isDark
-                                ? Colors.white.withAlpha(102)
-                                : Colors.black.withAlpha(102),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              location,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark
-                                    ? Colors.white.withAlpha(102)
-                                    : Colors.black.withAlpha(102),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: imagePath != null ? EdgeInsets.zero : const EdgeInsets.all(8),
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: color.withAlpha(26),
+                                  borderRadius: BorderRadius.circular(12),
+                                  image: imagePath != null && File(imagePath!).existsSync()
+                                      ? DecorationImage(
+                                          image: FileImage(File(imagePath!)),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
+                                ),
+                                child: imagePath == null
+                                    ? Icon(Icons.inventory_2_rounded, color: color, size: 20)
+                                    : null,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              if (onQrTap != null)
+                                GestureDetector(
+                                  onTap: onQrTap,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.qr_code_2_rounded, size: 16, color: Colors.grey),
+                                  ),
+                                ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Item count and QR icon
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                          const Spacer(),
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                size: 12,
+                                color: color.withAlpha(180),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  location,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white54 : Colors.black54,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: color.withAlpha(26),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  '$itemCount item${itemCount != 1 ? 's' : ''}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: color,
-                                  ),
+                                  '$itemCount Item${itemCount != 1 ? 's' : ''}',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: color),
                                 ),
                               ),
-                          if (onQrTap != null) ...[
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: onQrTap,
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: BoxDecoration(
-                                  color: color.withAlpha(26),
-                                  shape: BoxShape.circle,
+                              const Spacer(),
+                              if (capacity > 0)
+                                Text(
+                                  '${((itemCount / capacity) * 100).toInt()}%',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey),
                                 ),
-                                child: Icon(Icons.qr_code_2_rounded, size: 14, color: color),
+                            ],
+                          ),
+                          if (capacity > 0) ...[
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: LinearProgressIndicator(
+                                value: (itemCount / capacity).clamp(0.0, 1.0),
+                                backgroundColor: color.withAlpha(20),
+                                color: color,
+                                minHeight: 4,
                               ),
                             ),
                           ],
                         ],
                       ),
-                      if (capacity > 0)
-                            Text(
-                              '${((itemCount / capacity) * 100).toInt()}% full',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: isDark
-                                    ? Colors.white.withAlpha(128)
-                                    : Colors.black.withAlpha(128),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                        ],
-                      ),
-
-                      if (capacity > 0) ...[
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: (itemCount / capacity).clamp(0.0, 1.0),
-                            backgroundColor: color.withAlpha(26),
-                            color: (itemCount / capacity) >= 0.9 ? AppTheme.errorColor : color,
-                            minHeight: 4,
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
+                  ),
+                ],
+              ),
+              if (isFavorite)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withAlpha(40),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
                   ),
                 ),
-              ],
-            ),
-            if (isFavorite)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: onFavoriteTap,
-                  child: const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
-                ),
-              )
-            else if (onFavoriteTap != null)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: onFavoriteTap,
-                  child: Icon(Icons.star_outline_rounded, color: (isDark ? Colors.white : Colors.black).withAlpha(51), size: 22),
-                ),
-              ),
-            if (isSelected) 
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: AppTheme.primaryColor, shape: BoxShape.circle),
-                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

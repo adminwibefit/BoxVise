@@ -157,43 +157,64 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildBottomNav(BuildContext context) {
     return Consumer<InventoryProvider>(
       builder: (context, provider, _) {
-        return NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: (index) {
-            if (index == 2) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QrScannerScreen()),
-              );
-            } else {
-              setState(() => _currentIndex = index);
-            }
-          },
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.dashboard_outlined),
-              selectedIcon: const Icon(Icons.dashboard_rounded),
-              label: provider.translate('dashboard'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.search_rounded),
-              label: provider.translate('search'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.qr_code_scanner_rounded, size: 30),
-              label: provider.translate('scan'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.inventory_2_outlined),
-              selectedIcon: const Icon(Icons.inventory_2_rounded),
-              label: provider.translate('boxes'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.settings_outlined),
-              selectedIcon: const Icon(Icons.settings_rounded),
-              label: provider.translate('settings'),
-            ),
-          ],
+        return NavigationBarTheme(
+          data: NavigationBarThemeData(
+            labelTextStyle: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.primaryColor);
+              }
+              return TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isDark ? Colors.white54 : Colors.black54);
+            }),
+            iconTheme: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return const IconThemeData(size: 24, color: AppTheme.primaryColor);
+              }
+              return IconThemeData(size: 22, color: isDark ? Colors.white54 : Colors.black54);
+            }),
+          ),
+          child: NavigationBar(
+            height: 65,
+            elevation: 0,
+            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (index) {
+              if (index == 2) {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
+              } else {
+                setState(() => _currentIndex = index);
+              }
+            },
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.dashboard_rounded),
+                selectedIcon: const Icon(Icons.dashboard_rounded),
+                label: provider.translate('Dashboard'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.search_rounded),
+                label: provider.translate('Search'),
+              ),
+              NavigationDestination(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.qr_code_scanner_rounded, size: 24, color: Colors.white),
+                ),
+                label: provider.translate('Scan'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.inventory_2_rounded),
+                label: provider.translate('Boxes'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.settings_rounded),
+                label: provider.translate('Settings'),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -499,9 +520,9 @@ class _HomeTab extends StatelessWidget {
                 sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.78,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.75, // Adjusted to prevent overflows
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
