@@ -49,19 +49,31 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.dispose();
   }
 
-  int get activeIndex {
-    if (_currentIndex == 0) return 0;
-    if (_currentIndex == 1) return 1;
-    if (_currentIndex == 2) return 0; // fallback although 2 opens dialog
-    if (_currentIndex == 3) return 2;
-    if (_currentIndex == 4) return 3;
-    return 0;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: _HomeTab(),
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex < 2 ? _currentIndex : (_currentIndex == 2 ? 0 : _currentIndex - 1),
+        children: const [
+          _HomeTab(),
+          BoxesScreen(),
+          SearchScreen(),
+          SettingsScreen(),
+        ],
+      ),
+      floatingActionButton: _currentIndex == 0
+          ? ScaleTransition(
+              scale: CurvedAnimation(
+                parent: _fabController,
+                curve: Curves.elasticOut,
+              ),
+              child: FloatingActionButton(
+                onPressed: () => _showQuickAddMenu(context),
+                child: const Icon(Icons.add_rounded, size: 30),
+              ),
+            )
+          : null,
+      bottomNavigationBar: _buildBottomNav(context),
     );
   }
 
@@ -179,12 +191,11 @@ class _DashboardScreenState extends State<DashboardScreen>
             destinations: [
               NavigationDestination(
                 icon: const Icon(Icons.dashboard_rounded),
-                selectedIcon: const Icon(Icons.dashboard_rounded),
-                label: provider.translate('Dashboard'),
+                label: provider.translate('Home'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.search_rounded),
-                label: provider.translate('Search'),
+                icon: const Icon(Icons.grid_view_rounded),
+                label: provider.translate('Boxes'),
               ),
               NavigationDestination(
                 icon: Container(
@@ -198,8 +209,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 label: provider.translate('Scan'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.inventory_2_rounded),
-                label: provider.translate('Boxes'),
+                icon: const Icon(Icons.search_rounded),
+                label: provider.translate('Search'),
               ),
               NavigationDestination(
                 icon: const Icon(Icons.settings_rounded),
@@ -431,25 +442,24 @@ class _HomeTab extends StatelessWidget {
               toolbarHeight: 70,
               title: const Text('Boxvise', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               actions: [
-                IconButton(
-                  tooltip: 'Search',
-                  icon: const Icon(Icons.search_rounded),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())),
-                ),
-                IconButton(
-                  tooltip: 'Settings',
-                  icon: const Icon(Icons.settings_rounded),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-                ),
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
-                  child: TextButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                    icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                    label: const Text('Profile'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.primaryColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  child: Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withAlpha(20),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: TextButton.icon(
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                        icon: const Icon(Icons.person_rounded, size: 20),
+                        label: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -542,42 +552,7 @@ class _HomeTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    _buildCategoryCloud(context, provider),
-                    const SizedBox(height: 12),
-
-                    if (provider.expiringItems.isNotEmpty || provider.lowStockItems.isNotEmpty) ...[
-                      _sectionHeader(context, 'Attention Required'),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 100,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          children: [
-                            ...provider.expiringItems.map((e) => _buildAlertCard(
-                                  context,
-                                  'Expiring Soon',
-                                  '${e['item'].name} (${e['days']}d)',
-                                  Icons.timer_rounded,
-                                  Colors.redAccent,
-                                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: e['box']))),
-                                )),
-                            ...provider.lowStockItems.map((s) => _buildAlertCard(
-                                  context,
-                                  'Low Stock',
-                                  '${s['item'].name} in ${s['box'].name}',
-                                  Icons.warning_amber_rounded,
-                                  Colors.orangeAccent,
-                                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen())),
-                                )),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                    ],
-
-                    _buildLocationMapping(context, provider),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 20),
 
                     const Text('Quick Hub', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                     const SizedBox(height: 16),
@@ -606,12 +581,6 @@ class _HomeTab extends StatelessWidget {
                         }),
                         _buildactionTile(context, 'Shop List', Icons.shopping_cart_rounded, Colors.orange, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
-                        }),
-                        _buildactionTile(context, 'Family', Icons.group_rounded, Colors.indigo, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CollaboratorsScreen()));
-                        }),
-                        _buildactionTile(context, 'Analyze AI', Icons.psychology_rounded, Colors.pink, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const AiVisionScreen()));
                         }),
                         _buildactionTile(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()));

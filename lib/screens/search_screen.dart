@@ -5,6 +5,8 @@ import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'box_details_screen.dart';
+import '../models/box_model.dart';
+import '../models/item_model.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -16,14 +18,23 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _searchCtrl = TextEditingController();
   List<Map<String, dynamic>> _results = [];
+  
+  // Filters
   final List<String> _selectedTags = [];
   final List<String> _selectedLocations = [];
-
-  bool _lowStockOnly = false;
-  bool _showTemplatesOnly = false;
+  String? _selectedBoxId;
+  String? _quantityCategory;
+  String? _dateFilter;
+  String _sortBy = 'name_asc';
 
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // No initial search, following user preference to remove recommended searches
+  }
 
   @override
   void dispose() {
@@ -38,19 +49,22 @@ class _SearchScreenState extends State<SearchScreen> {
         _searchCtrl.text,
         selectedTags: _selectedTags,
         selectedLocations: _selectedLocations,
-        lowStockOnly: _lowStockOnly,
-        showTemplatesOnly: _showTemplatesOnly,
+        selectedBoxId: _selectedBoxId,
+        quantityCategory: _quantityCategory,
+        dateFilter: _dateFilter,
+        sortBy: _sortBy,
       );
     });
   }
 
-  void _toggleTag(String tag) {
+  void _clearFilters() {
     setState(() {
-      if (_selectedTags.contains(tag)) {
-        _selectedTags.remove(tag);
-      } else {
-        _selectedTags.add(tag);
-      }
+      _selectedTags.clear();
+      _selectedLocations.clear();
+      _selectedBoxId = null;
+      _quantityCategory = null;
+      _dateFilter = null;
+      _sortBy = 'name_asc';
       _performSearch();
     });
   }
@@ -60,6 +74,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (_selectedLocations.contains(loc)) {
         _selectedLocations.remove(loc);
       } else {
+        _selectedLocations.clear(); // User asked for All/Select behavior
         _selectedLocations.add(loc);
       }
       _performSearch();
@@ -95,7 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.watch<InventoryProvider>();
-    final isSearching = _searchCtrl.text.isNotEmpty || _selectedTags.isNotEmpty || _selectedLocations.isNotEmpty;
+    final isSearching = _searchCtrl.text.isNotEmpty || _selectedTags.isNotEmpty || _selectedLocations.isNotEmpty || _selectedBoxId != null || _quantityCategory != null || _dateFilter != null;
 
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
@@ -113,10 +128,10 @@ class _SearchScreenState extends State<SearchScreen> {
               icon: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: (_lowStockOnly || _showTemplatesOnly) ? AppTheme.primaryColor.withAlpha(20) : null,
+                  color: isSearching ? AppTheme.primaryColor.withAlpha(20) : null,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.tune_rounded, color: (_lowStockOnly || _showTemplatesOnly) ? AppTheme.primaryColor : null),
+                child: Icon(Icons.tune_rounded, color: isSearching ? AppTheme.primaryColor : null),
               ),
               onPressed: () => _showFilterSheet(context),
             ),
@@ -137,109 +152,77 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         
+        // Location Quick Chips
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (provider.allLocations.isNotEmpty) ...[
-                  Row(
-                    children: [
-                      Icon(Icons.room_rounded, size: 14, color: isDark ? Colors.white38 : Colors.black38),
-                      const SizedBox(width: 6),
-                      Text('LOCATION FILTERS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2)),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: provider.allLocations.map((loc) {
-                        final isSelected = _selectedLocations.contains(loc);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(loc),
-                            selected: isSelected,
-                            onSelected: (_) => _toggleLocation(loc),
-                            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            selectedColor: AppTheme.primaryColor.withAlpha(40),
-                            checkmarkColor: AppTheme.primaryColor,
-                            labelStyle: TextStyle(
-                              fontSize: 13, 
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                              color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white70 : Colors.black87)
-                            ),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            side: BorderSide(color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(5))),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('MOST USED LOCATIONS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2)),
+                    _buildLocationDropdown(provider, isDark),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: provider.locationHeatmap.keys.take(6).map((loc) {
+                      final isSelected = _selectedLocations.contains(loc);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(loc),
+                          selected: isSelected,
+                          onSelected: (_) => _toggleLocation(loc),
+                          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          selectedColor: AppTheme.primaryColor.withAlpha(40),
+                          checkmarkColor: AppTheme.primaryColor,
+                          labelStyle: TextStyle(
+                            fontSize: 13, 
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white70 : Colors.black87)
                           ),
-                        );
-                      }).toList(),
-                    ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: BorderSide(color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(5))),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                  const SizedBox(height: 20),
-                ],
-                
-                if (provider.allTags.isNotEmpty) ...[
-                  Row(
-                    children: [
-                      Icon(Icons.tag_rounded, size: 14, color: isDark ? Colors.white38 : Colors.black38),
-                      const SizedBox(width: 6),
-                      Text('CATEGORY FILTERS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2)),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: provider.allTags.map((tag) {
-                        final isSelected = _selectedTags.contains(tag);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(tag),
-                            selected: isSelected,
-                            onSelected: (_) => _toggleTag(tag),
-                            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            selectedColor: AppTheme.accentColor.withAlpha(40),
-                            checkmarkColor: AppTheme.accentColor,
-                            labelStyle: TextStyle(
-                              fontSize: 13, 
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                              color: isSelected ? AppTheme.accentColor : (isDark ? Colors.white70 : Colors.black87)
-                            ),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            side: BorderSide(color: isSelected ? AppTheme.accentColor : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(5))),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
+                ),
+                const SizedBox(height: 12),
+                _buildSortDropdown(isDark),
               ],
             ),
           ),
         ),
 
-        if (!isSearching)
+        if (!isSearching && _searchCtrl.text.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(color: AppTheme.primaryColor.withAlpha(15), shape: BoxShape.circle),
-                  child: Icon(Icons.search_rounded, size: 64, color: AppTheme.primaryColor),
-                ),
-                const SizedBox(height: 24),
-                const Text('Search Inventory', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text('What are you looking for today?', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(40),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search_rounded, size: 80, color: Colors.grey.withAlpha(50)),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Search Your Inventory',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Type above or use filters to find specific items instantly',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
             ),
           )
         else if (_results.isEmpty)
@@ -248,11 +231,17 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.search_off_rounded, size: 64, color: Colors.grey.withAlpha(100)),
+                Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.withAlpha(80)),
                 const SizedBox(height: 24),
-                const Text('No Items Found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text('Try different keywords or filters', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+                const Text('No Items Found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey)),
+                const SizedBox(height: 12),
+                const Text('Try another keyword or filter', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                const SizedBox(height: 32),
+                TextButton.icon(
+                  onPressed: _clearFilters,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Reset All Filters'),
+                ),
               ],
             ),
           )
@@ -263,9 +252,9 @@ class _SearchScreenState extends State<SearchScreen> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final r = _results[index];
-                  final box = r['box'];
-                  final item = r['item'];
-                  final color = Color(box.colorValue);
+                  final box = r['box'] as BoxModel;
+                  final item = r['item'] as ItemModel;
+                  final color = Color(box.colorValue ?? 0xFF2563EB);
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -294,7 +283,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: Icon(Icons.inventory_2_rounded, color: color, size: 28),
                         ),
                       ),
-                      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                      title: Text(item.name ?? 'Unnamed Item', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -303,41 +292,25 @@ class _SearchScreenState extends State<SearchScreen> {
                             children: [
                               Icon(Icons.move_to_inbox_rounded, size: 12, color: isDark ? Colors.white38 : Colors.black38),
                               const SizedBox(width: 4),
-                              Text(box.name?.toString() ?? 'Unnamed Box', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
+                              Flexible(child: Text(box.name ?? 'Unnamed Box', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54), overflow: TextOverflow.ellipsis)),
                               const SizedBox(width: 12),
                               Icon(Icons.location_on_rounded, size: 12, color: isDark ? Colors.white38 : Colors.black38),
                               const SizedBox(width: 4),
-                              Text(box.location?.toString() ?? 'Home', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
+                              Text(box.location ?? 'Home', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
                             ],
                           ),
-                          if (item.tags != null && (item.tags as List).isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 6,
-                              children: (item.tags as List).take(3).map((t) => Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5), borderRadius: BorderRadius.circular(6)),
-                                child: Text('#$t', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue)),
-                              )).toList(),
-                            ),
-                          ],
                         ],
                       ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: color.withAlpha(26),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${item.quantity}',
-                              style: TextStyle(fontWeight: FontWeight.w900, color: color, fontSize: 14),
-                            ),
-                          ),
-                        ],
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: color.withAlpha(26),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${item.quantity}',
+                          style: TextStyle(fontWeight: FontWeight.w900, color: color, fontSize: 14),
+                        ),
                       ),
                     ),
                   );
@@ -350,61 +323,223 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Widget _buildLocationDropdown(InventoryProvider provider, bool isDark) {
+    return PopupMenuButton<String>(
+      onSelected: (loc) {
+        setState(() {
+          if (loc == 'ALL') {
+            _selectedLocations.clear();
+          } else {
+            _selectedLocations.clear();
+            _selectedLocations.add(loc);
+          }
+          _performSearch();
+        });
+      },
+      itemBuilder: (ctx) => [
+        const PopupMenuItem(value: 'ALL', child: Text('All Locations')),
+        ...provider.allLocations.map((loc) => PopupMenuItem(value: loc, child: Text(loc))),
+      ],
+      child: Row(
+        children: [
+          Text(_selectedLocations.isEmpty ? 'All' : _selectedLocations.first, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+          const Icon(Icons.arrow_drop_down, color: AppTheme.primaryColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortDropdown(bool isDark) {
+    final sortNames = {
+      'name_asc': 'Name A-Z',
+      'name_desc': 'Name Z-A',
+      'newest': 'Recently Added',
+      'oldest': 'Oldest First',
+      'qty_high': 'Quantity High → Low',
+      'qty_low': 'Quantity Low → High',
+    };
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        const Text('SORT BY: ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
+        PopupMenuButton<String>(
+          onSelected: (val) {
+            setState(() {
+              _sortBy = val;
+              _performSearch();
+            });
+          },
+          itemBuilder: (ctx) => sortNames.entries.map((e) => PopupMenuItem(value: e.key, child: Text(e.value))).toList(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+            child: Row(
+              children: [
+                Text(sortNames[_sortBy]!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const Icon(Icons.sort_rounded, size: 16),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Advanced Filters', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              SwitchListTile(
-                title: const Text('Low Stock Items Only'),
-                subtitle: const Text('Items with quantity 1 or less'),
-                value: _lowStockOnly,
-                onChanged: (v) {
-                  setModalState(() => _lowStockOnly = v);
-                  setState(() => _lowStockOnly = v);
-                  _performSearch();
-                },
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scrollController) => StatefulBuilder(
+          builder: (context, setModalState) {
+            final provider = context.watch<InventoryProvider>();
+            return Padding(
+              padding: const EdgeInsets.all(24),
+              child: ListView(
+                controller: scrollController,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Advanced Filters', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+                      TextButton(onPressed: () { _clearFilters(); Navigator.pop(ctx); }, child: const Text('Reset All')),
+                    ],
+                  ),
+                  const Divider(height: 32),
+
+                  // Filter by Box
+                  _buildFilterHeader('📦 FILTER BY BOX'),
+                  SizedBox(
+                    height: 50,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: provider.boxes.length,
+                      itemBuilder: (ctx, index) {
+                        final box = provider.boxes[index];
+                        final isSelected = _selectedBoxId == box.id;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(box.name ?? ''),
+                            selected: isSelected,
+                            onSelected: (val) {
+                              setModalState(() => _selectedBoxId = val ? box.id : null);
+                              setState(() => _selectedBoxId = val ? box.id : null);
+                              _performSearch();
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Filter by Tag
+                  _buildFilterHeader('🏷 FILTER BY TAG'),
+                  Wrap(
+                    spacing: 8,
+                    children: provider.allTags.map((tag) {
+                      final isSelected = _selectedTags.contains(tag);
+                      return FilterChip(
+                        label: Text(tag),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          setModalState(() {
+                            if (val) _selectedTags.add(tag);
+                            else _selectedTags.remove(tag);
+                          });
+                          setState(() {
+                             if (val) _selectedTags.add(tag);
+                             else _selectedTags.remove(tag);
+                          });
+                          _performSearch();
+                        },
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Filter by Quantity
+                  _buildFilterHeader('📊 FILTER BY QUANTITY'),
+                  _buildQuantityOption(setModalState, 'Low stock (≤1)', 'low'),
+                  _buildQuantityOption(setModalState, 'Out of stock', 'out'),
+                  _buildQuantityOption(setModalState, '1-5 items', '1-5'),
+                  _buildQuantityOption(setModalState, '5-20 items', '5-20'),
+                  _buildQuantityOption(setModalState, '20+ items', '20+'),
+
+                  const SizedBox(height: 24),
+
+                  // Filter by Date
+                  _buildFilterHeader('📅 FILTER BY DATE ADDED'),
+                  _buildDateOption(setModalState, 'Today', 'today'),
+                  _buildDateOption(setModalState, 'Last 7 days', '7days'),
+                  _buildDateOption(setModalState, 'Last 30 days', '30days'),
+                  _buildDateOption(setModalState, 'Older items', 'older'),
+
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Apply Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
               ),
-              SwitchListTile(
-                title: const Text('Show Templates Only'),
-                subtitle: const Text('Only items saved as templates'),
-                value: _showTemplatesOnly,
-                onChanged: (v) {
-                  setModalState(() => _showTemplatesOnly = v);
-                  setState(() => _showTemplatesOnly = v);
-                  _performSearch();
-                },
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Apply Filters'),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () {
-                  setModalState(() { _lowStockOnly = false; _showTemplatesOnly = false; });
-                  setState(() { _lowStockOnly = false; _showTemplatesOnly = false; });
-                  _performSearch();
-                  Navigator.pop(ctx);
-                },
-                child: const Center(child: Text('Reset All')),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget _buildFilterHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 1.2)),
+    );
+  }
+
+  Widget _buildQuantityOption(StateSetter setModalState, String label, String value) {
+    final isSelected = _quantityCategory == value;
+    return RadioListTile<String>(
+      title: Text(label),
+      value: value,
+      groupValue: _quantityCategory,
+      contentPadding: EdgeInsets.zero,
+      onChanged: (val) {
+        setModalState(() => _quantityCategory = val);
+        setState(() => _quantityCategory = val);
+        _performSearch();
+      },
+      controlAffinity: ListTileControlAffinity.trailing,
+      toggleable: true,
+    );
+  }
+
+  Widget _buildDateOption(StateSetter setModalState, String label, String value) {
+    final isSelected = _dateFilter == value;
+    return RadioListTile<String>(
+      title: Text(label),
+      value: value,
+      groupValue: _dateFilter,
+      contentPadding: EdgeInsets.zero,
+      onChanged: (val) {
+        setModalState(() => _dateFilter = val);
+        setState(() => _dateFilter = val);
+        _performSearch();
+      },
+      controlAffinity: ListTileControlAffinity.trailing,
+      toggleable: true,
     );
   }
 }

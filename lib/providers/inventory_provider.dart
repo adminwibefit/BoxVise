@@ -930,25 +930,62 @@ class InventoryProvider extends ChangeNotifier {
     String query, {
     List<String>? selectedTags,
     List<String>? selectedLocations,
-    bool lowStockOnly = false,
+    String? selectedBoxId,
+    String? quantityCategory, // 'low', 'out', '1-5', '5-20', '20+'
+    String? dateFilter, // 'today', '7days', '30days', 'older'
+    String sortBy = 'name_asc', // 'name_asc', 'name_desc', 'newest', 'oldest', 'qty_high', 'qty_low'
     bool showTemplatesOnly = false,
   }) {
     final lowerQuery = query.toLowerCase().trim();
-    final results = <Map<String, dynamic>>[];
+    List<Map<String, dynamic>> results = [];
+
+    final now = DateTime.now();
 
     for (final box in _boxes) {
       if (selectedLocations != null && selectedLocations.isNotEmpty) {
         if (!selectedLocations.contains(box.location)) continue;
       }
+      if (selectedBoxId != null && box.id != selectedBoxId) continue;
 
       for (final item in box.items) {
         if (showTemplatesOnly && !item.isTemplate) continue;
-        if (lowStockOnly && (item.quantity ?? 0) > 1) continue;
 
+        // Quantity Filter
+        if (quantityCategory != null) {
+          final qty = item.quantity ?? 0;
+          bool matchesQty = false;
+          switch (quantityCategory) {
+            case 'low': matchesQty = qty <= 1 && qty > 0; break;
+            case 'out': matchesQty = qty == 0; break;
+            case '1-5': matchesQty = qty >= 1 && qty <= 5; break;
+            case '5-20': matchesQty = qty > 5 && qty <= 20; break;
+            case '20+': matchesQty = qty > 20; break;
+            default: matchesQty = true;
+          }
+          if (!matchesQty) continue;
+        }
+
+        // Date Filter
+        if (dateFilter != null) {
+          final created = box.createdDate ?? DateTime(2000);
+          final diff = now.difference(created).inDays;
+          bool matchesDate = false;
+          switch (dateFilter) {
+            case 'today': matchesDate = diff == 0; break;
+            case '7days': matchesDate = diff <= 7; break;
+            case '30days': matchesDate = diff <= 30; break;
+            case 'older': matchesDate = diff > 30; break;
+            default: matchesDate = true;
+          }
+          if (!matchesDate) continue;
+        }
+
+        // Tag Filter
         if (selectedTags != null && selectedTags.isNotEmpty) {
           if (!item.tags.any((t) => selectedTags.contains(t))) continue;
         }
 
+        // Query Filter
         if (lowerQuery.isNotEmpty) {
           final matchesName = (item.name ?? '').toLowerCase().contains(lowerQuery);
           final matchesTags = (item.tags).any((tag) => tag.toLowerCase().contains(lowerQuery));
@@ -964,6 +1001,25 @@ class InventoryProvider extends ChangeNotifier {
         });
       }
     }
+
+    // Sorting
+    results.sort((a, b) {
+      final itemA = a['item'] as ItemModel;
+      final itemB = b['item'] as ItemModel;
+      final boxA = a['box'] as BoxModel;
+      final boxB = b['box'] as BoxModel;
+
+      switch (sortBy) {
+        case 'name_asc': return (itemA.name ?? '').compareTo(itemB.name ?? '');
+        case 'name_desc': return (itemB.name ?? '').compareTo(itemA.name ?? '');
+        case 'newest': return (boxB.createdDate ?? DateTime(2000)).compareTo(boxA.createdDate ?? DateTime(2000));
+        case 'oldest': return (boxA.createdDate ?? DateTime(2000)).compareTo(boxB.createdDate ?? DateTime(2000));
+        case 'qty_high': return (itemB.quantity ?? 0).compareTo(itemA.quantity ?? 0);
+        case 'qty_low': return (itemA.quantity ?? 0).compareTo(itemB.quantity ?? 0);
+        default: return 0;
+      }
+    });
+
     return results;
   }
 

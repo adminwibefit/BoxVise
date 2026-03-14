@@ -9,6 +9,8 @@ import '../theme/app_theme.dart';
 import 'scan_history_screen.dart';
 import 'feature_center_screen.dart';
 import 'planner_screen.dart';
+import 'activity_screen.dart';
+import 'profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -43,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -50,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             expandedHeight: 140,
             floating: false,
             pinned: true,
+            backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 'Settings',
@@ -65,56 +69,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 8),
-                  
-                  // Appearance Section
-                  _buildSectionHeader('APPEARANCE'),
-                  _buildSectionCard([
+                   _buildSectionHeader('PROFILE'),
+                   _buildSectionCard([
+                    _buildSettingTile(
+                      title: 'User Profile',
+                      subtitle: '',
+                      icon: Icons.person_rounded,
+                      iconColor: AppTheme.primaryColor,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                    ),
+                   ]),
+
+                   _buildSectionHeader('APPEARANCE'),
+                   _buildSectionCard([
                     _buildSwitchTile(
                       title: 'Dark Mode',
-                      subtitle: 'Easier on the eyes in low light',
+                      subtitle: '',
                       icon: Icons.dark_mode_rounded,
                       iconColor: Colors.amber,
                       value: provider.isDarkMode,
                       onChanged: (val) => provider.toggleDarkMode(),
                     ),
                     _buildDivider(),
-                    _buildLanguageTile(provider),
-                    _buildDivider(),
                     _buildThemeColorTile(context, provider),
-                  ]),
+                   ]),
 
-                  // Security Section
-                  _buildSectionHeader('SECURITY'),
-                  _buildSectionCard([
-                    _buildSwitchTile(
-                      title: 'App Lock',
-                      subtitle: 'Secure your inventory with a PIN',
-                      icon: Icons.lock_person_rounded,
+                   _buildSectionHeader('ACTIVITY & LOGS'),
+                   _buildSectionCard([
+                    _buildSettingTile(
+                      title: 'View Activity History',
+                      subtitle: '',
+                      icon: Icons.history_rounded,
                       iconColor: Colors.blueAccent,
-                      value: provider.usePinLock,
-                      onChanged: (val) => _handlePinToggle(context, provider, val),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
                     ),
-                  ]),
+                   ]),
 
-                  // Data Management Section
-                  _buildSectionHeader('DATA MANAGEMENT'),
-                  _buildSectionCard([
+                   _buildSectionHeader('DATA & CLOUD'),
+                   _buildSectionCard([
                     _buildSettingTile(
-                      title: 'Export to CSV',
-                      subtitle: 'Download spreadsheet data',
-                      icon: Icons.table_chart_rounded,
-                      iconColor: Colors.green,
-                      onTap: () => provider.exportToCSV(),
-                    ),
-                    _buildDivider(),
-                    _buildSettingTile(
-                      title: 'Export to PDF',
-                      subtitle: 'Create a printable report',
+                      title: 'Export PDF',
+                      subtitle: '',
                       icon: Icons.picture_as_pdf_rounded,
                       iconColor: Colors.redAccent,
                       onTap: () => provider.exportToPDF(),
@@ -122,149 +121,96 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildDivider(),
                     _buildSettingTile(
                       title: 'Import CSV',
-                      subtitle: 'Bulk add from external source',
+                      subtitle: '',
                       icon: Icons.upload_file_rounded,
                       iconColor: Colors.orange,
                       onTap: () => _handleImport(context, provider),
                     ),
                     _buildDivider(),
                     _buildSettingTile(
-                      title: 'Scan History',
-                      subtitle: 'View previously scanned codes',
-                      icon: Icons.history_rounded,
-                      iconColor: Colors.purple,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanHistoryScreen())),
-                    ),
-                  ]),
-
-                  _buildSectionHeader('PRODUCTIVITY'),
-                  _buildSectionCard([
-                    _buildSettingTile(
-                      title: 'Smart Planner',
-                      subtitle: 'Daily task board for actions',
-                      icon: Icons.task_alt_rounded,
-                      iconColor: Colors.blue,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen())),
-                    ),
-                    _buildDivider(),
-                    _buildSettingTile(
-                      title: 'Feature Center',
-                      subtitle: 'Open all advanced modules',
-                      icon: Icons.widgets_rounded,
+                      title: 'Export CSV',
+                      subtitle: '',
+                      icon: Icons.table_chart_rounded,
                       iconColor: Colors.green,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FeatureCenterScreen())),
-                    ),
-                  ]),
-
-                  // Interaction Section
-                  _buildSectionHeader('COMMUNITY & SUPPORT'),
-                  _buildSectionCard([
-                    _buildSettingTile(
-                      title: 'Share Boxvise',
-                      subtitle: 'Recommend to friends & family',
-                      icon: Icons.share_rounded,
-                      iconColor: AppTheme.primaryColor,
-                      onTap: () => Share.share('Check out Boxvise - The smartest inventory manager! https://github.com/harshith241005/Boxvise'),
+                      onTap: () => provider.exportToCSV(),
                     ),
                     _buildDivider(),
                     _buildSettingTile(
-                      title: 'Help Center',
-                      subtitle: 'FAQs and integration guides',
-                      icon: Icons.help_outline_rounded,
-                      iconColor: Colors.teal,
-                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxvise'),
-                    ),
-                    _buildDivider(),
-                    _buildSettingTile(
-                      title: 'Contact Support',
-                      subtitle: 'Get help with your account',
-                      icon: Icons.support_agent_rounded,
-                      iconColor: Colors.orange,
-                      onTap: () => _launchUrl('mailto:support@Boxvise.app'),
-                    ),
-                  ]),
-
-                  // Legal Section
-                  _buildSectionHeader('LEGAL & PRIVACY'),
-                  _buildSectionCard([
-                    _buildSettingTile(
-                      title: 'Privacy Policy',
-                      subtitle: 'Data usage and protection policy',
-                      icon: Icons.privacy_tip_rounded,
-                      iconColor: Colors.green,
-                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxvise'),
-                    ),
-                    _buildDivider(),
-                    _buildSettingTile(
-                      title: 'Terms of Service',
-                      subtitle: 'Legal usage agreement',
-                      icon: Icons.description_rounded,
+                      title: 'Backup Data',
+                      subtitle: '',
+                      icon: Icons.cloud_upload_rounded,
                       iconColor: Colors.indigo,
-                      onTap: () => _launchUrl('https://github.com/harshith241005/Boxvise'),
+                      onTap: () {},
                     ),
-                  ]),
+                   ]),
 
-                  // Danger Zone Section
-                  _buildSectionHeader('SYSTEM'),
-                  _buildSectionCard([
+                   _buildSectionHeader('HELP & SUPPORT'),
+                   _buildSectionCard([
                     _buildSettingTile(
-                      title: 'Factory Reset',
-                      subtitle: 'Wipe all local data and boxes',
+                      title: 'Help Guide',
+                      subtitle: '',
+                      icon: Icons.menu_book_rounded,
+                      iconColor: Colors.teal,
+                      onTap: () => _launchUrl('https://boxvise.app/help'),
+                    ),
+                    _buildDivider(),
+                    _buildSettingTile(
+                      title: 'FAQ',
+                      subtitle: 'Frequently asked questions',
+                      icon: Icons.quiz_rounded,
+                      iconColor: Colors.blue,
+                      onTap: () => _launchUrl('https://boxvise.app/faq'),
+                    ),
+                    _buildDivider(),
+                    _buildSettingTile(
+                      title: 'Report Bug',
+                      subtitle: 'Help us improve the app',
+                      icon: Icons.bug_report_rounded,
+                      iconColor: Colors.orange,
+                      onTap: () => _launchUrl('mailto:bugs@bugs.boxvise.app'),
+                    ),
+                    _buildDivider(),
+                    _buildSettingTile(
+                      title: 'Share App',
+                      subtitle: 'Spread the word about Boxvise',
+                      icon: Icons.share_rounded,
+                      iconColor: Colors.purple,
+                      onTap: () => Share.share('Check out Boxvise! https://boxvise.app'),
+                    ),
+                   ]),
+
+                   _buildSectionHeader('ABOUT'),
+                   _buildSectionCard([
+                    _buildSettingTile(
+                      title: 'About App',
+                      subtitle: 'Learn more about Boxvise',
+                      icon: Icons.info_outline_rounded,
+                      iconColor: Colors.indigo,
+                      onTap: () => _launchUrl('https://boxvise.app/about'),
+                    ),
+                    _buildDivider(),
+                    _buildSettingTile(
+                      title: 'Rate Us',
+                      subtitle: 'Rate us on the Play Store',
+                      icon: Icons.star_rate_rounded,
+                      iconColor: Colors.amber,
+                      onTap: () => _launchUrl('https://play.google.com'),
+                    ),
+                   ]),
+
+                   _buildSectionHeader('DANGER ZONE'),
+                   _buildSectionCard([
+                    _buildSettingTile(
+                      title: 'Reset Data',
+                      subtitle: 'Permanent factory reset of the app',
                       icon: Icons.delete_forever_rounded,
-                      iconColor: AppTheme.errorColor,
-                      textColor: AppTheme.errorColor,
+                      iconColor: Colors.red,
+                      textColor: Colors.red,
                       onTap: () => _showResetConfirmation(context, provider),
                     ),
-                  ]),
+                   ]),
 
-                  const SizedBox(height: 32),
-                  
-                  // Premium About Section
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withAlpha(5) : Colors.black.withAlpha(5),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'BOXVISE',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 4,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Version $_version ($_buildNumber)',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.white38 : Colors.black38,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Made with ',
-                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38),
-                            ),
-                            const Icon(Icons.favorite_rounded, color: Colors.red, size: 12),
-                            Text(
-                              ' for Organization',
-                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 48),
+                   const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -279,10 +225,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.only(left: 8, bottom: 10, top: 24),
       child: Text(
         title,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: Colors.grey.withAlpha(180),
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: Colors.grey,
           letterSpacing: 1.5,
         ),
       ),
@@ -295,13 +241,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
+        border: Border.all(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5)),
         boxShadow: isDark ? [] : [
-          BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 40, offset: const Offset(0, 10)),
         ],
       ),
       child: Column(children: children),
@@ -314,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       height: 1,
       indent: 64,
       endIndent: 16,
-      color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(5),
+      color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5),
     );
   }
 
@@ -335,41 +277,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: iconColor.withAlpha(20),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: iconColor, size: 22),
+              decoration: BoxDecoration(color: iconColor.withAlpha(20), shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: textColor,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  Text(title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: textColor)),
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
+            const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 18),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildOptionTile(String title, String subtitle, IconData icon, Color color) {
+    return _buildSettingTile(title: title, subtitle: subtitle, icon: icon, iconColor: color, onTap: () {});
   }
 
   Widget _buildSwitchTile({
@@ -386,227 +318,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconColor.withAlpha(20),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 22),
+            decoration: BoxDecoration(color: iconColor.withAlpha(20), shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-          Switch.adaptive(
-            value: value,
-            activeColor: iconColor,
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComingSoonTile({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required String status,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.grey.withAlpha(20),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.grey, size: 22),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.grey),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withAlpha(15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.primaryColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLanguageTile(InventoryProvider provider) {
-    final languageNames = {
-      'en': 'English',
-      'hi': 'Hindi',
-      'te': 'Telugu',
-    };
-
-    return InkWell(
-      onTap: () => _showLanguagePicker(context, provider),
-      borderRadius: BorderRadius.circular(24),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.blue.withAlpha(20),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.translate_rounded, color: Colors.blue, size: 22),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('App Language', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                  Text(languageNames[provider.language] ?? 'English', style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
-              ),
+              ],
             ),
-            const Icon(Icons.unfold_more_rounded, color: Colors.grey, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLanguagePicker(BuildContext context, InventoryProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Choose Language', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 20),
-            _buildLanguageOption(context, provider, 'en', 'English'),
-            _buildLanguageOption(context, provider, 'hi', 'Hindi'),
-            _buildLanguageOption(context, provider, 'te', 'Telugu'),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageOption(BuildContext context, InventoryProvider provider, String code, String name) {
-    final isSelected = provider.language == code;
-    return ListTile(
-      onTap: () {
-        provider.setLanguage(code);
-        Navigator.pop(context);
-      },
-      title: Text(name, style: TextStyle(fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500)),
-      trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppTheme.primaryColor) : null,
-    );
-  }
-
-  void _handlePinToggle(BuildContext context, InventoryProvider provider, bool value) {
-    if (value) {
-      _showSetPinDialog(context, provider);
-    } else {
-      provider.togglePinLock(false);
-    }
-  }
-
-  void _showSetPinDialog(BuildContext context, InventoryProvider provider) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('New Security PIN'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter a 4-digit PIN to lock your inventory data.'),
-            const SizedBox(height: 20),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              maxLength: 4,
-              obscureText: true,
-              autofocus: true,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 24, letterSpacing: 10, fontWeight: FontWeight.bold),
-              decoration: InputDecoration(
-                counterText: '',
-                fillColor: Colors.black.withAlpha(5),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.length == 4) {
-                provider.setPin(controller.text);
-                provider.togglePinLock(true);
-                Navigator.pop(ctx);
-              }
-            },
-            child: const Text('Lock App'),
           ),
+          Switch.adaptive(value: value, activeColor: AppTheme.primaryColor, onChanged: onChanged),
         ],
       ),
     );
   }
+
 
   Future<void> _handleImport(BuildContext context, InventoryProvider provider) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
-    );
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv']);
     if (result != null && result.files.single.path != null) {
       await provider.importFromCSV(result.files.single.path!);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Inventory Import Successful!')));
-      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Import complete!')));
     }
   }
 
@@ -614,18 +353,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset Everything?'),
-        content: const Text('This will delete ALL your boxes, items, and settings. This action is permanent and cannot be undone.'),
+        title: const Text('Factory Reset?'),
+        content: const Text('All data will be permanently erased.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              provider.resetAllData();
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('App has been reset to factory state.')));
-            },
-            child: const Text('RESET ALL', style: TextStyle(color: AppTheme.errorColor, fontWeight: FontWeight.bold)),
-          ),
+          TextButton(onPressed: () { provider.resetAllData(); Navigator.pop(ctx); }, child: const Text('ERASE', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -633,17 +365,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
+
   Widget _buildThemeColorTile(BuildContext context, InventoryProvider provider) {
     return _buildSettingTile(
-      title: 'Theme Color',
-      subtitle: 'Personalize the app with your color',
-      icon: Icons.palette_rounded,
-      iconColor: provider.primaryColor,
-      onTap: () => _showThemeColorPicker(context, provider),
+      title: 'Theme', 
+      subtitle: '', 
+      icon: Icons.palette_rounded, 
+      iconColor: provider.primaryColor, 
+      onTap: () => _showThemeColorPicker(context, provider)
     );
   }
 
@@ -655,41 +386,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Choose Theme Color', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            const Text('Refresh the appearance across the entire app.', style: TextStyle(color: Colors.grey)),
+            const Text('Pick Global Accent', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
-            SizedBox(
-              height: 120,
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 6,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                ),
-                itemCount: AppTheme.boxColors.length,
-                itemBuilder: (context, index) {
-                  final color = AppTheme.boxColors[index];
-                  final isSelected = provider.primaryColor.value == color.value;
-                  return GestureDetector(
-                    onTap: () {
-                      provider.setPrimaryColor(color);
-                      Navigator.pop(ctx);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
-                        boxShadow: isSelected ? [BoxShadow(color: color.withAlpha(102), blurRadius: 10, spreadRadius: 2)] : [],
-                      ),
-                      child: isSelected ? const Icon(Icons.check_rounded, color: Colors.white, size: 20) : null,
-                    ),
-                  );
-                },
-              ),
+            GridView.builder(
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 16, mainAxisSpacing: 16),
+              itemCount: AppTheme.boxColors.length,
+              itemBuilder: (context, index) {
+                final color = AppTheme.boxColors[index];
+                final isSelected = provider.primaryColor.value == color.value;
+                return GestureDetector(
+                  onTap: () { provider.setPrimaryColor(color); Navigator.pop(ctx); },
+                  child: Container(
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle, border: isSelected ? Border.all(color: Colors.white, width: 3) : null),
+                    child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
           ],
@@ -698,4 +412,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-
