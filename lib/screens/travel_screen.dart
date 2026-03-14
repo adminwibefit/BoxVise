@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/inventory_provider.dart';
+import 'package:collection/collection.dart';
 import '../models/box_model.dart';
 import '../models/travel_model.dart';
 import '../theme/app_theme.dart';
