@@ -130,8 +130,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       child: EmptyStateWidget(
         icon: Icons.shopping_basket_outlined,
         title: 'Your list is empty',
-        subtitle: 'Add items manually or let low-stock alerts fill this up.',
-        lottieUrl: 'https://assets5.lottiefiles.com/packages/lf20_m6cuL6.json',
+        subtitle: 'Add items or let low-stock alerts build your list.',
       ),
     );
   }
