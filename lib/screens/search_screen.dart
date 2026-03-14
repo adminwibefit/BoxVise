@@ -450,7 +450,7 @@ class _FilterModalState extends State<_FilterModal> {
                       _buildCategoryItem('Tags', Icons.sell_rounded),
                       _buildCategoryItem('Location', Icons.location_on_rounded),
                       _buildCategoryItem('Quantity', Icons.analytics_rounded),
-                      _buildCategoryItem('Date Added', Icons.event_note_rounded),
+                      _buildCategoryItem('Timeline', Icons.event_note_rounded),
                       _buildCategoryItem('Sort By', Icons.sort_rounded),
                     ],
                   ),
@@ -603,7 +603,7 @@ class _FilterModalState extends State<_FilterModal> {
             _buildOptionTile('20+ items', '20+', _quantity),
           ],
         );
-      case 'Date Added':
+      case 'Timeline':
         return Column(
           children: [
             _buildOptionTile('All Time', null, _date),
@@ -661,7 +661,7 @@ class _FilterModalState extends State<_FilterModal> {
     return _buildFilterRow(label, isSelected, () {
       setState(() {
         if (_activeCategory == 'Quantity') _quantity = value;
-        else if (_activeCategory == 'Date Added') _date = value;
+        else if (_activeCategory == 'Timeline') _date = value;
         else if (_activeCategory == 'Sort By') _sort = value ?? 'name_asc';
       });
     });
