@@ -589,7 +589,7 @@ class _HomeTab extends StatelessWidget {
                       'Inventory Overview',
                       'Review all your records and storage distribution.',
                       Icons.analytics_rounded,
-                      Colors.orange,
+                      AppTheme.warningColor,
                       'View Details',
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
                     ),
@@ -598,16 +598,16 @@ class _HomeTab extends StatelessWidget {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _buildQuickHubCard(context, 'Create Box', Icons.add_box_rounded, Colors.teal, () {
+                        Expanded(child: _buildQuickHubCard(context, 'Create Box', Icons.add_box_rounded, AppTheme.accentColor, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
                         })),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Add Item', Icons.add_circle_rounded, Colors.indigo, () {
+                        Expanded(child: _buildQuickHubCard(context, 'Add Item', Icons.add_circle_rounded, AppTheme.primaryColor, () {
                           final provider = context.read<InventoryProvider>();
                           _showAddItemListDialog(context, provider);
                         })),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Generate QR', Icons.qr_code_2_rounded, Colors.teal, () {
+                        Expanded(child: _buildQuickHubCard(context, 'Generate QR', Icons.qr_code_2_rounded, AppTheme.accentColor, () {
                           final provider = context.read<InventoryProvider>();
                           _showGeneratedQRs(context, provider);
                         })),
@@ -616,15 +616,15 @@ class _HomeTab extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: _buildQuickHubCard(context, 'Travel', Icons.local_shipping_rounded, Colors.indigo, () {
+                        Expanded(child: _buildQuickHubCard(context, 'Travel', Icons.local_shipping_rounded, AppTheme.primaryColor, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()));
                         })),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Shopping', Icons.shopping_cart_rounded, Colors.orange, () {
+                        Expanded(child: _buildQuickHubCard(context, 'Shopping', Icons.shopping_cart_rounded, AppTheme.warningColor, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
                         })),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
+                        Expanded(child: _buildQuickHubCard(context, 'Planner', Icons.task_alt_rounded, AppTheme.accentColor, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()));
                         })),
                       ],
