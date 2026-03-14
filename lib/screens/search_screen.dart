@@ -33,7 +33,6 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    // No initial search, following user preference to remove recommended searches
   }
 
   @override
@@ -74,7 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (_selectedLocations.contains(loc)) {
         _selectedLocations.remove(loc);
       } else {
-        _selectedLocations.clear(); // User asked for All/Select behavior
+        _selectedLocations.clear();
         _selectedLocations.add(loc);
       }
       _performSearch();
@@ -124,14 +123,14 @@ class _SearchScreenState extends State<SearchScreen> {
           title: const Text('Search', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
           actions: [
             IconButton(
-              tooltip: 'Advanced Filters',
+              tooltip: 'Filter',
               icon: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: isSearching ? AppTheme.primaryColor.withAlpha(20) : null,
+                  color: (isSearching && _searchCtrl.text.isEmpty) ? AppTheme.primaryColor.withAlpha(20) : null,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.tune_rounded, color: isSearching ? AppTheme.primaryColor : null),
+                child: Icon(Icons.tune_rounded, color: (isSearching && _searchCtrl.text.isEmpty) ? AppTheme.primaryColor : null),
               ),
               onPressed: () => _showFilterSheet(context),
             ),
@@ -152,50 +151,14 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         
-        // Location Quick Chips
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('MOST USED LOCATIONS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2)),
-                    _buildLocationDropdown(provider, isDark),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    children: provider.locationHeatmap.keys.take(6).map((loc) {
-                      final isSelected = _selectedLocations.contains(loc);
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(loc),
-                          selected: isSelected,
-                          onSelected: (_) => _toggleLocation(loc),
-                          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                          selectedColor: AppTheme.primaryColor.withAlpha(40),
-                          checkmarkColor: AppTheme.primaryColor,
-                          labelStyle: TextStyle(
-                            fontSize: 13, 
-                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                            color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white70 : Colors.black87)
-                          ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          side: BorderSide(color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(5))),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildSortDropdown(isDark),
+                Text('LOCATIONS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2)),
+                _buildLocationDropdown(provider, isDark),
               ],
             ),
           ),
@@ -349,197 +312,358 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSortDropdown(bool isDark) {
-    final sortNames = {
-      'name_asc': 'Name A-Z',
-      'name_desc': 'Name Z-A',
-      'newest': 'Recently Added',
-      'oldest': 'Oldest First',
-      'qty_high': 'Quantity High → Low',
-      'qty_low': 'Quantity Low → High',
-    };
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        const Text('SORT BY: ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey)),
-        PopupMenuButton<String>(
-          onSelected: (val) {
-            setState(() {
-              _sortBy = val;
-              _performSearch();
-            });
-          },
-          itemBuilder: (ctx) => sortNames.entries.map((e) => PopupMenuItem(value: e.key, child: Text(e.value))).toList(),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
-            child: Row(
-              children: [
-                Text(sortNames[_sortBy]!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                const Icon(Icons.sort_rounded, size: 16),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.8,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, scrollController) => StatefulBuilder(
-          builder: (context, setModalState) {
-            final provider = context.watch<InventoryProvider>();
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: ListView(
-                controller: scrollController,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _FilterModal(
+        initialTags: _selectedTags,
+        initialLocations: _selectedLocations,
+        initialBoxId: _selectedBoxId,
+        initialQuantity: _quantityCategory,
+        initialDate: _dateFilter,
+        initialSort: _sortBy,
+        onApply: (tags, locations, boxId, qty, date, sort) {
+          setState(() {
+            _selectedTags.clear(); _selectedTags.addAll(tags);
+            _selectedLocations.clear(); _selectedLocations.addAll(locations);
+            _selectedBoxId = boxId;
+            _quantityCategory = qty;
+            _dateFilter = date;
+            _sortBy = sort;
+            _performSearch();
+          });
+        },
+        onReset: _clearFilters,
+      ),
+    );
+  }
+}
+
+class _FilterModal extends StatefulWidget {
+  final List<String> initialTags;
+  final List<String> initialLocations;
+  final String? initialBoxId;
+  final String? initialQuantity;
+  final String? initialDate;
+  final String initialSort;
+  final Function(List<String>, List<String>, String?, String?, String?, String) onApply;
+  final VoidCallback onReset;
+
+  const _FilterModal({
+    required this.initialTags,
+    required this.initialLocations,
+    required this.initialBoxId,
+    required this.initialQuantity,
+    required this.initialDate,
+    required this.initialSort,
+    required this.onApply,
+    required this.onReset,
+  });
+
+  @override
+  State<_FilterModal> createState() => _FilterModalState();
+}
+
+class _FilterModalState extends State<_FilterModal> {
+  String _activeCategory = 'Box';
+  late List<String> _tags;
+  late List<String> _locations;
+  String? _boxId;
+  String? _quantity;
+  String? _date;
+  late String _sort;
+
+  final TextEditingController _boxSearchCtrl = TextEditingController();
+  final TextEditingController _tagSearchCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _tags = List.from(widget.initialTags);
+    _locations = List.from(widget.initialLocations);
+    _boxId = widget.initialBoxId;
+    _quantity = widget.initialQuantity;
+    _date = widget.initialDate;
+    _sort = widget.initialSort;
+    
+    _boxSearchCtrl.addListener(() => setState(() {}));
+    _tagSearchCtrl.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _boxSearchCtrl.dispose();
+    _tagSearchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final provider = context.watch<InventoryProvider>();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 12, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Filter', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                TextButton(
+                  onPressed: () {
+                    widget.onReset();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Reset All', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          
+          // Body
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Panel
+                Container(
+                  width: 130,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.black.withAlpha(20) : Colors.grey.withAlpha(10),
+                    border: Border(right: BorderSide(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5))),
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     children: [
-                      const Text('Advanced Filters', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-                      TextButton(onPressed: () { _clearFilters(); Navigator.pop(ctx); }, child: const Text('Reset All')),
+                      _buildCategoryItem('Box', Icons.inventory_2_rounded),
+                      _buildCategoryItem('Tags', Icons.sell_rounded),
+                      _buildCategoryItem('Location', Icons.location_on_rounded),
+                      _buildCategoryItem('Quantity', Icons.analytics_rounded),
+                      _buildCategoryItem('Date Added', Icons.event_note_rounded),
+                      _buildCategoryItem('Sort By', Icons.sort_rounded),
                     ],
                   ),
-                  const Divider(height: 32),
-
-                  // Filter by Box
-                  _buildFilterHeader('📦 FILTER BY BOX'),
-                  SizedBox(
-                    height: 50,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: provider.boxes.length,
-                      itemBuilder: (ctx, index) {
-                        final box = provider.boxes[index];
-                        final isSelected = _selectedBoxId == box.id;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(box.name ?? ''),
-                            selected: isSelected,
-                            onSelected: (val) {
-                              setModalState(() => _selectedBoxId = val ? box.id : null);
-                              setState(() => _selectedBoxId = val ? box.id : null);
-                              _performSearch();
-                            },
-                          ),
-                        );
-                      },
-                    ),
+                ),
+                
+                // Right Panel
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: _buildOptionsPanel(provider, isDark),
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Filter by Tag
-                  _buildFilterHeader('🏷 FILTER BY TAG'),
-                  Wrap(
-                    spacing: 8,
-                    children: provider.allTags.map((tag) {
-                      final isSelected = _selectedTags.contains(tag);
-                      return FilterChip(
-                        label: Text(tag),
-                        selected: isSelected,
-                        onSelected: (val) {
-                          setModalState(() {
-                            if (val) _selectedTags.add(tag);
-                            else _selectedTags.remove(tag);
-                          });
-                          setState(() {
-                             if (val) _selectedTags.add(tag);
-                             else _selectedTags.remove(tag);
-                          });
-                          _performSearch();
-                        },
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Filter by Quantity
-                  _buildFilterHeader('📊 FILTER BY QUANTITY'),
-                  _buildQuantityOption(setModalState, 'Low stock (≤1)', 'low'),
-                  _buildQuantityOption(setModalState, 'Out of stock', 'out'),
-                  _buildQuantityOption(setModalState, '1-5 items', '1-5'),
-                  _buildQuantityOption(setModalState, '5-20 items', '5-20'),
-                  _buildQuantityOption(setModalState, '20+ items', '20+'),
-
-                  const SizedBox(height: 24),
-
-                  // Filter by Date
-                  _buildFilterHeader('📅 FILTER BY DATE ADDED'),
-                  _buildDateOption(setModalState, 'Today', 'today'),
-                  _buildDateOption(setModalState, 'Last 7 days', '7days'),
-                  _buildDateOption(setModalState, 'Last 30 days', '30days'),
-                  _buildDateOption(setModalState, 'Older items', 'older'),
-
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Apply Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Bottom Action
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  widget.onApply(_tags, _locations, _boxId, _quantity, _date, _sort);
+                  Navigator.pop(context);
+                },
+                child: const Text('Apply Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
-            );
-          },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryItem(String title, IconData icon) {
+    final isSelected = _activeCategory == title;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return GestureDetector(
+      onTap: () => setState(() => _activeCategory = title),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? (isDark ? const Color(0xFF1E293B) : Colors.white) : Colors.transparent,
+          border: isSelected ? Border(left: BorderSide(color: AppTheme.primaryColor, width: 4)) : null,
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: isSelected ? AppTheme.primaryColor : Colors.grey),
+            const SizedBox(height: 4),
+            Text(title, 
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11, 
+                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                color: isSelected ? (isDark ? Colors.white : Colors.black87) : Colors.grey,
+              )),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 1.2)),
+  Widget _buildOptionsPanel(InventoryProvider provider, bool isDark) {
+    switch (_activeCategory) {
+      case 'Box':
+        final filteredBoxes = provider.boxes.where((b) => 
+          (b.name ?? '').toLowerCase().contains(_boxSearchCtrl.text.toLowerCase())).toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSearchField(_boxSearchCtrl, 'Search boxes...'),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.builder(
+                itemCount: filteredBoxes.length,
+                itemBuilder: (ctx, i) {
+                  final b = filteredBoxes[i];
+                  final isSel = _boxId == b.id;
+                  return _buildFilterRow(b.name ?? 'Unnamed', isSel, () {
+                    setState(() => _boxId = isSel ? null : b.id);
+                  });
+                },
+              ),
+            ),
+          ],
+        );
+      case 'Tags':
+        final filteredTags = provider.allTags.where((t) => 
+          t.toLowerCase().contains(_tagSearchCtrl.text.toLowerCase())).toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSearchField(_tagSearchCtrl, 'Search tags...'),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.builder(
+                itemCount: filteredTags.length,
+                itemBuilder: (ctx, i) {
+                  final t = filteredTags[i];
+                  final isSel = _tags.contains(t);
+                  return _buildFilterRow('#$t', isSel, () {
+                    setState(() {
+                      if (isSel) _tags.remove(t);
+                      else _tags.add(t);
+                    });
+                  });
+                },
+              ),
+            ),
+          ],
+        );
+      case 'Location':
+        return Column(
+          children: [
+            _buildFilterRow('All Locations', _locations.isEmpty, () => setState(() => _locations.clear())),
+            Expanded(
+              child: ListView.builder(
+                itemCount: provider.allLocations.length,
+                itemBuilder: (ctx, i) {
+                  final loc = provider.allLocations[i];
+                  final isSel = _locations.contains(loc);
+                  return _buildFilterRow(loc, isSel, () {
+                    setState(() {
+                      _locations.clear(); // User preferred single location from dropdown logic
+                      _locations.add(loc);
+                    });
+                  });
+                },
+              ),
+            ),
+          ],
+        );
+      case 'Quantity':
+         return Column(
+          children: [
+            _buildOptionTile('All Items', null, _quantity),
+            _buildOptionTile('Low stock (≤1)', 'low', _quantity),
+            _buildOptionTile('Out of stock', 'out', _quantity),
+            _buildOptionTile('1-5 items', '1-5', _quantity),
+            _buildOptionTile('5-20 items', '5-20', _quantity),
+            _buildOptionTile('20+ items', '20+', _quantity),
+          ],
+        );
+      case 'Date Added':
+        return Column(
+          children: [
+            _buildOptionTile('All Time', null, _date),
+            _buildOptionTile('Today', 'today', _date),
+            _buildOptionTile('Last 7 days', '7days', _date),
+            _buildOptionTile('Last 30 days', '30days', _date),
+            _buildOptionTile('Older items', 'older', _date),
+          ],
+        );
+      case 'Sort By':
+        final sortOptions = {
+          'name_asc': 'Name A-Z',
+          'name_desc': 'Name Z-A',
+          'newest': 'Recently Added',
+          'oldest': 'Oldest First',
+          'qty_high': 'Quantity High → Low',
+          'qty_low': 'Quantity Low → High',
+        };
+        return Column(
+          children: sortOptions.entries.map((e) => _buildOptionTile(e.value, e.key, _sort)).toList(),
+        );
+      default:
+        return const Center(child: Text('Select a category'));
+    }
+  }
+
+  Widget _buildSearchField(TextEditingController ctrl, String hint) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return TextField(
+      controller: ctrl,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+        prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Colors.grey),
+        filled: true,
+        fillColor: isDark ? Colors.white.withAlpha(5) : Colors.black.withAlpha(5),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
     );
   }
 
-  Widget _buildQuantityOption(StateSetter setModalState, String label, String value) {
-    final isSelected = _quantityCategory == value;
-    return RadioListTile<String>(
-      title: Text(label),
-      value: value,
-      groupValue: _quantityCategory,
+  Widget _buildFilterRow(String label, bool isSelected, VoidCallback onTap) {
+    return ListTile(
+      onTap: onTap,
+      title: Text(label, style: TextStyle(fontSize: 14, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+      trailing: isSelected ? Icon(Icons.check_circle_rounded, color: AppTheme.primaryColor, size: 20) : null,
       contentPadding: EdgeInsets.zero,
-      onChanged: (val) {
-        setModalState(() => _quantityCategory = val);
-        setState(() => _quantityCategory = val);
-        _performSearch();
-      },
-      controlAffinity: ListTileControlAffinity.trailing,
-      toggleable: true,
+      dense: true,
     );
   }
 
-  Widget _buildDateOption(StateSetter setModalState, String label, String value) {
-    final isSelected = _dateFilter == value;
-    return RadioListTile<String>(
-      title: Text(label),
-      value: value,
-      groupValue: _dateFilter,
-      contentPadding: EdgeInsets.zero,
-      onChanged: (val) {
-        setModalState(() => _dateFilter = val);
-        setState(() => _dateFilter = val);
-        _performSearch();
-      },
-      controlAffinity: ListTileControlAffinity.trailing,
-      toggleable: true,
-    );
+  Widget _buildOptionTile(String label, String? value, String? groupValue) {
+    final isSelected = value == groupValue;
+    return _buildFilterRow(label, isSelected, () {
+      setState(() {
+        if (_activeCategory == 'Quantity') _quantity = value;
+        else if (_activeCategory == 'Date Added') _date = value;
+        else if (_activeCategory == 'Sort By') _sort = value ?? 'name_asc';
+      });
+    });
   }
 }
