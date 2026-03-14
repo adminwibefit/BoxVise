@@ -876,58 +876,6 @@ class _HomeTab extends StatelessWidget {
       ],
     );
   }
-                      decoration: BoxDecoration(
-                        color: _getActivityColor(activity.type).withAlpha(26),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(_getActivityIcon(activity.type), color: _getActivityColor(activity.type), size: 18),
-                    ),
-                    title: Text(activity.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
-                    subtitle: Text(activity.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
-                    trailing: Text(_timeAgo(activity.timestamp), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey)),
-                  ),
-                  if (!isLast) Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10))),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  IconData _getActivityIcon(String type) {
-    switch (type) {
-      case 'box_created': return Icons.add_box_rounded;
-      case 'item_added': return Icons.add_circle_outline_rounded;
-      case 'item_moved': return Icons.move_up_rounded;
-      case 'box_deleted':
-      case 'item_deleted': return Icons.delete_outline_rounded;
-      case 'box_scanned': return Icons.qr_code_scanner_rounded;
-      default: return Icons.history_rounded;
-    }
-  }
-
-  Color _getActivityColor(String type) {
-    switch (type) {
-      case 'box_created':
-      case 'item_added': return Colors.green;
-      case 'item_moved': return Colors.blue;
-      case 'box_deleted':
-      case 'item_deleted': return AppTheme.errorColor;
-      case 'box_scanned': return Colors.purple;
-      default: return AppTheme.primaryColor;
-    }
-  }
-
-  String _timeAgo(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return 'now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    return '${diff.inDays}d';
-  }
-
   void _showDeleteDialog(BuildContext context, InventoryProvider provider, dynamic box) {
     showDialog(
       context: context,
