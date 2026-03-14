@@ -104,10 +104,13 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               const Text('Quick Add', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+              GridView.count(
+                shrinkWrap: true,
+                crossAxisCount: 3,
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 10,
                 children: [
-                   _quickActionBtn(context, Icons.inventory_2_rounded, 'Add Box', AppTheme.primaryColor, () {
+                   _quickActionBtn(context, Icons.inventory_2_rounded, 'Create Box', AppTheme.primaryColor, () {
                     Navigator.pop(ctx);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
                   }),
@@ -115,6 +118,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                     Navigator.pop(ctx);
                     final provider = context.read<InventoryProvider>();
                     _showAddItemListDialog(context, provider);
+                  }),
+                  _quickActionBtn(context, Icons.qr_code_2_rounded, 'Generate QR', Colors.teal, () {
+                    Navigator.pop(ctx);
+                    final provider = context.read<InventoryProvider>();
+                    _showGeneratedQRs(context, provider);
                   }),
                   _quickActionBtn(context, Icons.qr_code_scanner_rounded, 'Scan QR', AppTheme.accentColor, () {
                     Navigator.pop(ctx);
@@ -124,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     Navigator.pop(ctx);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AiVisionScreen()));
                   }),
-                  _quickActionBtn(context, Icons.import_export_rounded, 'Import Data', AppTheme.warningColor, () async {
+                  _quickActionBtn(context, Icons.import_export_rounded, 'Export Data', AppTheme.warningColor, () async {
                     Navigator.pop(ctx);
                     final provider = context.read<InventoryProvider>();
                     _showExportDialog(context, provider);
@@ -237,6 +245,43 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 }
 
+void _showGeneratedQRs(BuildContext context, InventoryProvider provider) {
+  if (provider.boxes.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No boxes available.')));
+    return;
+  }
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (ctx) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(20),
+          child: Text('Generated Box QRs', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: provider.boxes.length,
+            itemBuilder: (c, i) {
+              final box = provider.boxes[i];
+              return ListTile(
+                leading: Icon(Icons.qr_code_2_rounded, color: Color(box.colorValue ?? AppTheme.primaryColor.value)),
+                title: Text(box.name?.toString() ?? 'Unnamed Box'),
+                subtitle: Text(box.uuid ?? 'No UUID'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => QrCodeScreen(box: box)));
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 void _showAddItemListDialog(BuildContext context, InventoryProvider provider) {
   if (provider.boxes.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please create a box first.')));
@@ -278,42 +323,7 @@ void _showAddItemListDialog(BuildContext context, InventoryProvider provider) {
 class _HomeTab extends StatelessWidget {
   const _HomeTab();
 
-  void _showGeneratedQRs(BuildContext context, InventoryProvider provider) {
-    if (provider.boxes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No boxes available.')));
-      return;
-    }
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(20),
-            child: Text('Generated Box QRs', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: provider.boxes.length,
-              itemBuilder: (c, i) {
-                final box = provider.boxes[i];
-                return ListTile(
-                  leading: Icon(Icons.qr_code_2_rounded, color: Color(box.colorValue ?? AppTheme.primaryColor.value)),
-                  title: Text(box.name?.toString() ?? 'Unnamed Box'),
-                  subtitle: Text(box.uuid ?? 'No UUID'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => QrCodeScreen(box: box)));
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Removed _showGeneratedQRs from here since it's now top-level
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -555,7 +565,7 @@ class _HomeTab extends StatelessWidget {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _buildQuickHubCard(context, 'Add Box', Icons.add_box_rounded, Colors.teal, () {
+                        Expanded(child: _buildQuickHubCard(context, 'Create Box', Icons.add_box_rounded, Colors.teal, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
                         })),
                         const SizedBox(width: 12),
@@ -564,8 +574,9 @@ class _HomeTab extends StatelessWidget {
                           _showAddItemListDialog(context, provider);
                         })),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'All Features', Icons.apps_rounded, Colors.blueGrey, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const FeatureCenterScreen()));
+                        Expanded(child: _buildQuickHubCard(context, 'Generate QR', Icons.qr_code_2_rounded, Colors.teal, () {
+                          final provider = context.read<InventoryProvider>();
+                          _showGeneratedQRs(context, provider);
                         })),
                       ],
                     ),

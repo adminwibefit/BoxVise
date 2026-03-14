@@ -786,7 +786,7 @@ class InventoryProvider extends ChangeNotifier {
         'settings': 'Settings',
         'total_boxes': 'Total Boxes',
         'low_stock': 'Low Stock Items',
-        'add_box': 'Add Box',
+        'add_box': 'Create Box',
       },
       'hi': {
         'dashboard': 'डैशबोर्ड',
