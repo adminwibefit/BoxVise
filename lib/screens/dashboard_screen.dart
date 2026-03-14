@@ -719,8 +719,12 @@ class _HomeTab extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     _buildLocationMapping(context, provider),
                     const SizedBox(height: 24),
 
