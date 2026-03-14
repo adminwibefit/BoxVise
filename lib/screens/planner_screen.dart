@@ -15,6 +15,27 @@ class _PlannerScreenState extends State<PlannerScreen> {
   DateTime? _selectedDueDate;
   String _filter = 'open';
 
+  Widget _buildIntelligenceFeature(IconData icon, String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white70, size: 18),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(desc, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _taskController.dispose();
@@ -99,6 +120,38 @@ class _PlannerScreenState extends State<PlannerScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppTheme.primaryColor, AppTheme.primaryColor.withAlpha(200)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.white.withAlpha(51), borderRadius: BorderRadius.circular(12)),
+                            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
+                          ),
+                          const SizedBox(width: 16),
+                          const Text('Intelligence Hub', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildIntelligenceFeature(Icons.inventory_rounded, 'Auto-Restock', 'Detects low items and suggests shopping.'),
+                      _buildIntelligenceFeature(Icons.timer_rounded, 'Expiry Tracker', 'Alerts you before perishable items expire.'),
+                      _buildIntelligenceFeature(Icons.handshake_rounded, 'Lending Monitor', 'Tracks items borrowed by friends/family.'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -108,17 +161,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Today\'s Focus', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                      const Text('Today\'s Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 6),
                       Text(
-                        '${provider.plannerTasks.length - completedCount} pending • $completedCount completed',
+                        '${provider.plannerTasks.length - completedCount} pending tasks',
                         style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
                       ),
                       const SizedBox(height: 14),
                       TextField(
                         controller: _taskController,
                         decoration: InputDecoration(
-                          hintText: 'Add a custom task',
+                          hintText: 'Quick add a manual task...',
                           prefixIcon: const Icon(Icons.add_task_rounded),
                           suffixIcon: IconButton(
                             onPressed: () async {
@@ -149,8 +202,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () => _addTask(provider),
-                          icon: const Icon(Icons.save_rounded),
-                          label: const Text('Add Task'),
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Create Task'),
                         ),
                       ),
                     ],
@@ -275,4 +328,5 @@ class _PlannerScreenState extends State<PlannerScreen> {
       ),
     );
   }
+
 }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:collection/collection.dart';
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -11,6 +12,7 @@ import '../models/box_model.dart';
 import '../models/item_model.dart';
 import '../models/activity_model.dart';
 import '../models/lending_model.dart';
+import '../models/travel_model.dart';
 import '../services/database_service.dart';
 import '../theme/app_theme.dart';
 
@@ -39,12 +41,18 @@ class InventoryProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _scanHistory = [];
   List<Map<String, String>> _collaborators = [];
   List<Map<String, dynamic>> _plannerTasks = [];
+  final List<Map<String, dynamic>> _manualShoppingList = [];
+  List<TravelModel> _travelLogs = [];
+  TravelModel? _activeTravel;
 
   List<ActivityModel> get activities => _activities;
   List<LendingModel> get lendingLogs => _lendingLogs;
   List<Map<String, dynamic>> get scanHistory => _scanHistory;
   List<Map<String, String>> get collaborators => _collaborators;
   List<Map<String, dynamic>> get plannerTasks => _plannerTasks;
+  List<Map<String, dynamic>> get manualShoppingList => _manualShoppingList;
+  List<TravelModel> get travelLogs => _travelLogs;
+  TravelModel? get activeTravel => _activeTravel;
 
   Future<void> _loadActivities() async {
     _activities = await DatabaseService.getActivities();
@@ -140,6 +148,24 @@ class InventoryProvider extends ChangeNotifier {
       _boxes.fold(0, (sum, box) => sum + box.items.length);
   int get totalQuantity =>
       _boxes.fold(0, (sum, box) => sum + box.totalQuantity);
+
+  void addToShoppingList(BoxModel box, [ItemModel? item]) {
+    final exists = _manualShoppingList.any((e) => e['box'].id == box.id && (item == null || e['item']?.id == item.id));
+    if (!exists) {
+      _manualShoppingList.add({'box': box, 'item': item});
+      notifyListeners();
+    }
+  }
+
+  void removeFromShoppingList(String boxId, [String? itemId]) {
+    _manualShoppingList.removeWhere((e) => e['box'].id == boxId && (itemId == null || e['item']?.id == itemId));
+    notifyListeners();
+  }
+
+  void clearShoppingList() {
+    _manualShoppingList.clear();
+    notifyListeners();
+  }
 
 
   int get totalCategories =>
@@ -273,6 +299,7 @@ class InventoryProvider extends ChangeNotifier {
     await _loadCollaborators();
     await _loadPlannerTasks();
     await generateSmartPlannerTasks();
+    await loadTravelLogs();
     notifyListeners();
   }
 
@@ -920,6 +947,92 @@ class InventoryProvider extends ChangeNotifier {
     }
   }
 
+  // --- Travel ---
+  Future<void> loadTravelLogs() async {
+    _travelLogs = await DatabaseService.getAllTravelLogs();
+    final actives = _travelLogs.where((t) => !t.isCompleted).toList();
+    if (actives.isNotEmpty) _activeTravel = actives.first;
+    notifyListeners();
+  }
+
+  Future<void> startTravel({
+    required String name,
+    required String from,
+    required String to,
+    required List<BoxModel> selectedBoxes,
+  }) async {
+    final newTravel = TravelModel(
+      id: _uuid.v4(),
+      name: name,
+      fromLocation: from,
+      toLocation: to,
+      timestamp: DateTime.now(),
+      itemStatuses: selectedBoxes.map((b) => TravelItemStatus(
+        boxId: b.id,
+        boxName: b.name ?? 'Unnamed Box',
+        location: b.location ?? '',
+      )).toList(),
+    );
+
+    _activeTravel = newTravel;
+    _travelLogs.insert(0, newTravel);
+    await DatabaseService.addTravelLog(newTravel);
+    
+    logActivity(
+      'travel_started',
+      'Travel Started: $name',
+      'Moving ${selectedBoxes.length} boxes from $from to $to',
+    );
+    notifyListeners();
+  }
+
+  Future<void> updateTravelStatus(String travelId, String boxId, TravelStatus status) async {
+    final travelIndex = _travelLogs.indexWhere((t) => t.id == travelId);
+    if (travelIndex == -1) return;
+    
+    final itemStatus = _travelLogs[travelIndex].itemStatuses.firstWhere((isSet) => isSet.boxId == boxId);
+    itemStatus.status = status;
+    await DatabaseService.updateTravelLog(_travelLogs[travelIndex]);
+    notifyListeners();
+  }
+
+  Future<void> endTravel(String travelId) async {
+    final travelIndex = _travelLogs.indexWhere((t) => t.id == travelId);
+    if (travelIndex == -1) return;
+    
+    final travel = _travelLogs[travelIndex];
+    travel.isCompleted = true;
+    
+    // Update box locations upon arrival
+    for (var itemStatus in travel.itemStatuses) {
+      if (itemStatus.status == TravelStatus.unloaded) {
+        final boxIdx = _boxes.indexWhere((b) => b.id == itemStatus.boxId);
+        if (boxIdx != -1) {
+          _boxes[boxIdx].location = travel.toLocation;
+          await DatabaseService.updateBox(_boxes[boxIdx]);
+        }
+      }
+    }
+
+    await DatabaseService.updateTravelLog(travel);
+    if (_activeTravel?.id == travelId) _activeTravel = null;
+    
+    logActivity(
+      'travel_completed',
+      'Travel Completed: ${travel.name}',
+      '${travel.fromLocation} → ${travel.toLocation}',
+    );
+    notifyListeners();
+  }
+
+  Future<void> removeFromTravel(String travelId, String boxId) async {
+    final travelIndex = _travelLogs.indexWhere((t) => t.id == travelId);
+    if (travelIndex == -1) return;
+    
+    _travelLogs[travelIndex].itemStatuses.removeWhere((s) => s.boxId == boxId);
+    await DatabaseService.updateTravelLog(_travelLogs[travelIndex]);
+    notifyListeners();
+  }
   // --- Search ---
   void setSearchQuery(String query) {
     _searchQuery = query;

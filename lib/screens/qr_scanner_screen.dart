@@ -6,7 +6,8 @@ import '../theme/app_theme.dart';
 import 'box_details_screen.dart';
 
 class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key});
+  final bool returnMode;
+  const QrScannerScreen({super.key, this.returnMode = false});
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
@@ -37,8 +38,12 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
       // Check if this is a Boxvise QR code (starts with Boxvise:)
       if (rawValue.startsWith('Boxvise:')) {
-        final uuid = rawValue.substring(8); // Remove "Boxvise:" prefix
-        _navigateToBox(uuid);
+        final uuid = rawValue.substring(8);
+        if (widget.returnMode) {
+          Navigator.pop(context, uuid);
+        } else {
+          _navigateToBox(uuid);
+        }
       } else {
         _showInvalidQRDialog();
       }

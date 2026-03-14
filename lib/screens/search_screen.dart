@@ -27,6 +27,23 @@ class _SearchScreenState extends State<SearchScreen> {
   String? _dateFilter;
   String _sortBy = 'name_asc';
 
+  Widget _buildQuickChip(String label, bool isSelected, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: FilterChip(
+        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w500, color: isSelected ? Colors.white : AppTheme.primaryColor)),
+        selected: isSelected,
+        onSelected: (_) => onTap(),
+        selectedColor: AppTheme.primaryColor,
+        backgroundColor: AppTheme.primaryColor.withAlpha(20),
+        checkmarkColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+      ),
+    );
+  }
+
+
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
 
@@ -111,7 +128,8 @@ class _SearchScreenState extends State<SearchScreen> {
     final provider = context.watch<InventoryProvider>();
     final isSearching = _searchCtrl.text.isNotEmpty || _selectedTags.isNotEmpty || _selectedLocations.isNotEmpty || _selectedBoxId != null || _quantityCategory != null || _dateFilter != null;
 
-    return CustomScrollView(
+    return Scaffold(
+      body: CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
         SliverAppBar(
@@ -153,12 +171,36 @@ class _SearchScreenState extends State<SearchScreen> {
         
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('LOCATIONS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2)),
-                _buildLocationDropdown(provider, isDark),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('LOCATIONS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2)),
+                    _buildLocationDropdown(provider, isDark),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 36,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _buildQuickChip('All', _selectedLocations.isEmpty, () => setState(() => _selectedLocations.clear())),
+                      ...provider.allLocations.map((loc) => _buildQuickChip(
+                        loc, 
+                        _selectedLocations.contains(loc), 
+                        () => setState(() {
+                          _selectedLocations.clear();
+                          _selectedLocations.add(loc);
+                          _performSearch();
+                        })
+                      )),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -283,6 +325,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
       ],
+      ),
     );
   }
 

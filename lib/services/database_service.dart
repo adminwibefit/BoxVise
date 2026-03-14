@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../models/box_model.dart';
 import '../models/item_model.dart';
 import '../models/activity_model.dart';
+import '../models/travel_model.dart';
 
 class DatabaseService {
   static Database? _db;
@@ -16,7 +17,7 @@ class DatabaseService {
 
     _db = await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE boxes ADD COLUMN uuid TEXT');
@@ -36,6 +37,19 @@ class DatabaseService {
               return_date TEXT,
               actual_return_date TEXT,
               status TEXT
+            )
+          ''');
+        }
+        if (oldVersion < 5) {
+          await db.execute('''
+            CREATE TABLE travel_logs (
+              id TEXT PRIMARY KEY,
+              name TEXT,
+              fromLocation TEXT,
+              toLocation TEXT,
+              timestamp TEXT,
+              itemStatuses TEXT,
+              isCompleted INTEGER
             )
           ''');
         }
@@ -140,6 +154,19 @@ class DatabaseService {
             status TEXT
           )
         ''');
+
+        // Travel Logs Table
+        await db.execute('''
+          CREATE TABLE travel_logs (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            fromLocation TEXT,
+            toLocation TEXT,
+            timestamp TEXT,
+            itemStatuses TEXT,
+            isCompleted INTEGER
+          )
+        ''');
       },
     );
   }
@@ -177,7 +204,6 @@ class DatabaseService {
   }
 
   static Future<void> deleteBox(String id) async {
-    // Cascade delete will handle items, but just to be safe:
     await db.delete('items', where: 'box_id = ?', whereArgs: [id]);
     await db.delete('boxes', where: 'id = ?', whereArgs: [id]);
   }
@@ -222,7 +248,6 @@ class DatabaseService {
   static Future<void> _updateItemTags(String itemId, List<String> tags) async {
     await db.delete('item_tags', where: 'item_id = ?', whereArgs: [itemId]);
     for (var tag in tags) {
-      // Find or create tag
       var tagRows = await db.query('tags', where: 'name = ?', whereArgs: [tag]);
       String tagId;
       if (tagRows.isEmpty) {
@@ -266,7 +291,6 @@ class DatabaseService {
       'box_name': boxName,
       'scan_time': DateTime.now().toIso8601String(),
     });
-    // Keep only last 50
     final count = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM scan_history')) ?? 0;
     if (count > 50) {
       await db.rawQuery('''
@@ -291,7 +315,7 @@ class DatabaseService {
     try {
       return jsonDecode(maps.first['value'] as String);
     } catch (_) {
-      return maps.first['value']; // String fallback
+      return maps.first['value'];
     }
   }
 
@@ -317,6 +341,24 @@ class DatabaseService {
     await db.delete('lending_logs', where: 'id = ?', whereArgs: [id]);
   }
 
+  // --- Travel Logs ---
+  static Future<List<TravelModel>> getAllTravelLogs() async {
+    final maps = await db.query('travel_logs', orderBy: 'timestamp DESC');
+    return maps.map((e) => TravelModel.fromMap(e)).toList();
+  }
+
+  static Future<void> addTravelLog(TravelModel log) async {
+    await db.insert('travel_logs', log.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  static Future<void> updateTravelLog(TravelModel log) async {
+    await db.update('travel_logs', log.toMap(), where: 'id = ?', whereArgs: [log.id]);
+  }
+
+  static Future<void> deleteTravelLog(String id) async {
+    await db.delete('travel_logs', where: 'id = ?', whereArgs: [id]);
+  }
+
   static Future<void> resetAllData() async {
     await db.delete('items');
     await db.delete('boxes');
@@ -326,5 +368,6 @@ class DatabaseService {
     await db.delete('activity_logs');
     await db.delete('settings');
     await db.delete('lending_logs');
+    await db.delete('travel_logs');
   }
 }

@@ -233,12 +233,17 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
                       child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
                     ),
                     onSelected: (val) {
+                      if (val == 'shop') {
+                        provider.addToShoppingList(box);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Box added to temporary shop list')));
+                      }
                       if (val == 'pdf') _shareBoxPdf();
                       if (val == 'text') _shareBoxText();
                       if (val == 'label') provider.shareQrLabelPdf(box);
                       if (val == 'nfc') _writeNfcTag(context);
                     },
                     itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'shop', child: Text('Add Box to Shop List')),
                       const PopupMenuItem(value: 'pdf', child: Text('Share PDF Report')),
                       const PopupMenuItem(value: 'text', child: Text('Share as Text List')),
                       const PopupMenuItem(value: 'label', child: Text('Share Printable QR Label')),
@@ -849,6 +854,17 @@ class _ItemCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          IconButton(
+                            icon: const Icon(Icons.add_shopping_cart_rounded, size: 20, color: AppTheme.primaryColor),
+                            onPressed: () {
+                              provider.addToShoppingList(box, item);
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${item.name} added to shop list')));
+                            },
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            tooltip: 'Add to Shop List',
+                          ),
                           IconButton(
                             icon: const Icon(Icons.front_hand_rounded, size: 20),
                             onPressed: () => _showLendDialog(context, provider, item),

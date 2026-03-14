@@ -149,32 +149,60 @@ class _BoxesScreenState extends State<BoxesScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                  child: Row(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _buildDropdown(
-                          label: 'Filter',
-                          value: _selectedLocation,
-                          items: ['All', ...provider.allLocations],
-                          onChanged: (val) => setState(() => _selectedLocation = val!),
-                          isDark: isDark,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Filter',
+                              value: _selectedLocation,
+                              items: ['All', ...provider.allLocations],
+                              onChanged: (val) => setState(() => _selectedLocation = val!),
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Sort',
+                              value: _sortBy,
+                              items: [
+                                'Recently Added', 
+                                'Oldest First', 
+                                'Name A-Z', 
+                                'Name Z-A', 
+                                'Item Count (High)', 
+                                'Item Count (Low)'
+                              ],
+                              onChanged: (val) => setState(() => _sortBy = val!),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildDropdown(
-                          label: 'Sort',
-                          value: _sortBy,
-                          items: [
-                            'Recently Added', 
-                            'Oldest First', 
-                            'Name A-Z', 
-                            'Name Z-A', 
-                            'Item Count (High)', 
-                            'Item Count (Low)'
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withAlpha(10),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.layers_rounded, size: 14, color: AppTheme.primaryColor),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Showing 1–${visibleBoxes.length} of ${allFiltered.length} boxes',
+                              style: TextStyle(
+                                fontSize: 12, 
+                                fontWeight: FontWeight.w800, 
+                                color: AppTheme.primaryColor,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
                           ],
-                          onChanged: (val) => setState(() => _sortBy = val!),
-                          isDark: isDark,
                         ),
                       ),
                     ],

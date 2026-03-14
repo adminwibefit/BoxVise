@@ -20,6 +20,7 @@ import 'collaborators_screen.dart';
 import 'profile_screen.dart';
 import 'feature_center_screen.dart';
 import 'planner_screen.dart';
+import 'travel_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -53,11 +54,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex < 2 ? _currentIndex : (_currentIndex == 2 ? 0 : _currentIndex - 1),
+        index: _currentIndex == 0 ? 0 : (_currentIndex == 1 ? 1 : (_currentIndex == 2 ? 2 : (_currentIndex == 3 ? 0 : (_currentIndex == 4 ? 3 : 4)))),
         children: const [
           _HomeTab(),
           BoxesScreen(),
           SearchScreen(),
+          TravelScreen(),
           SettingsScreen(),
         ],
       ),
@@ -182,7 +184,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
             selectedIndex: _currentIndex,
             onDestinationSelected: (index) {
-              if (index == 2) {
+              if (index == 3) {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
               } else {
                 setState(() => _currentIndex = index);
@@ -198,6 +200,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                 label: provider.translate('Boxes'),
               ),
               NavigationDestination(
+                icon: const Icon(Icons.search_rounded),
+                label: provider.translate('Search'),
+              ),
+              NavigationDestination(
                 icon: Container(
                   padding: const EdgeInsets.all(6), 
                   decoration: BoxDecoration(
@@ -209,8 +215,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 label: provider.translate('Scan'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.search_rounded),
-                label: provider.translate('Search'),
+                icon: const Icon(Icons.local_shipping_rounded),
+                label: provider.translate('Travel'),
               ),
               NavigationDestination(
                 icon: const Icon(Icons.settings_rounded),
@@ -452,11 +458,11 @@ class _HomeTab extends StatelessWidget {
                       ),
                       child: TextButton.icon(
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                        icon: const Icon(Icons.person_rounded, size: 20),
-                        label: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                        icon: const Icon(Icons.person_rounded, size: 24),
+                        label: const SizedBox.shrink(),
                         style: TextButton.styleFrom(
                           foregroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.all(12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ),
@@ -501,7 +507,10 @@ class _HomeTab extends StatelessWidget {
                   children: [
                     GestureDetector(
                       onTap: () {
-                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
+                        final dashboard = context.findAncestorStateOfType<_DashboardScreenState>();
+                        if (dashboard != null) {
+                          dashboard.setState(() => dashboard._currentIndex = 3);
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -567,26 +576,20 @@ class _HomeTab extends StatelessWidget {
                         _buildactionTile(context, 'Create Box', Icons.inventory_2_rounded, AppTheme.primaryColor, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
                         }),
+                        _buildactionTile(context, 'Travel Box', Icons.local_shipping_rounded, Colors.indigo, () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()));
+                        }),
                         _buildactionTile(context, 'Add Item', Icons.checklist_rounded, AppTheme.accentColor, () {
                           _showAddItemListDialog(context, provider);
                         }),
                         _buildactionTile(context, 'Scan QR', Icons.qr_code_scanner_rounded, Colors.teal, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
                         }),
-                        _buildactionTile(context, 'Generate QR', Icons.qr_code_2_rounded, Colors.deepOrange, () {
-                          _showGeneratedQRs(context, provider);
-                        }),
-                        _buildactionTile(context, 'View All QRs', Icons.grid_view_rounded, Colors.purple, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const QrSheetScreen()));
-                        }),
                         _buildactionTile(context, 'Shop List', Icons.shopping_cart_rounded, Colors.orange, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
                         }),
                         _buildactionTile(context, 'Planner', Icons.task_alt_rounded, Colors.blue, () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()));
-                        }),
-                        _buildactionTile(context, 'All Features', Icons.widgets_rounded, Colors.green, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const FeatureCenterScreen()));
                         }),
                       ],
                     ),
@@ -657,10 +660,31 @@ class _HomeTab extends StatelessWidget {
                         ),
                       );
                     },
-                    childCount: provider.boxes.length,
+                    childCount: provider.boxes.length > 10 ? 10 : provider.boxes.length,
                   ),
                 ),
               ),
+              if (provider.boxes.length > 10)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: TextButton.icon(
+                        onPressed: () {
+                          final dashboard = context.findAncestorStateOfType<_DashboardScreenState>();
+                          if (dashboard != null) {
+                            dashboard.setState(() => dashboard._currentIndex = 1);
+                          }
+                        },
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                        label: Text(
+                          'Showing 1–10 of ${provider.boxes.length} boxes • View All',
+                          style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.primaryColor),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
 
             const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
