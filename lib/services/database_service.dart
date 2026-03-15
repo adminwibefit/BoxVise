@@ -17,7 +17,7 @@ class DatabaseService {
 
     _db = await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE boxes ADD COLUMN uuid TEXT');
@@ -92,6 +92,10 @@ class DatabaseService {
         }
         if (oldVersion < 8) {
           await db.execute('ALTER TABLE travel_items ADD COLUMN item_name TEXT');
+        }
+        if (oldVersion < 9) {
+          await db.execute('ALTER TABLE travel_boxes ADD COLUMN box_name TEXT');
+          await db.execute('ALTER TABLE travel_boxes ADD COLUMN location TEXT');
         }
       },
       onCreate: (db, version) async {
@@ -214,6 +218,8 @@ class DatabaseService {
           CREATE TABLE travel_boxes (
             session_id TEXT,
             box_id TEXT,
+            box_name TEXT,
+            location TEXT,
             status TEXT,
             FOREIGN KEY(session_id) REFERENCES travel_sessions(id) ON DELETE CASCADE,
             FOREIGN KEY(box_id) REFERENCES boxes(id) ON DELETE CASCADE
@@ -401,7 +407,11 @@ class DatabaseService {
     for (var session in sessions) {
       final sessionId = session['id'] as String;
       final boxesMap = await db.rawQuery('''
-        SELECT tb.box_id, tb.status, b.name as boxName, b.location as location
+        SELECT 
+          tb.box_id, 
+          tb.status, 
+          COALESCE(tb.box_name, b.name) as boxName, 
+          COALESCE(tb.location, b.location) as location
         FROM travel_boxes tb
         LEFT JOIN boxes b ON tb.box_id = b.id
         WHERE tb.session_id = ?

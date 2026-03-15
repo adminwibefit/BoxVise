@@ -41,8 +41,6 @@ class _StatsScreenState extends State<StatsScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 8),
-                _buildScoreCard(provider, isDark, bg),
-                const SizedBox(height: 24),
 
                 // ── Activity Chart ──
                 _heading('Recent Productivity'),
@@ -87,61 +85,6 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildScoreCard(InventoryProvider provider, bool isDark, Color bg) {
-    final score = provider.boxes.isEmpty ? 0 : 85;
-    final label = score >= 80 ? 'Premium' : score >= 50 ? 'Healthy' : 'Syncing';
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: isDark ? Colors.white.withAlpha(10) : AppTheme.primaryColor.withAlpha(25)),
-      ),
-      child: Row(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 72, height: 72,
-                child: CircularProgressIndicator(
-                  value: score / 100,
-                  strokeWidth: 8,
-                  strokeCap: StrokeCap.round,
-                  backgroundColor: AppTheme.primaryColor.withAlpha(20),
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-              Text('$score%', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-            ],
-          ),
-          const SizedBox(width: 22),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text('Catalog Health', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(color: AppTheme.primaryColor.withAlpha(20), borderRadius: BorderRadius.circular(10)),
-                      child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.primaryColor)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text('Your inventory structure is optimized for high-speed retrieval.', 
-                  style: TextStyle(fontSize: 11, color: isDark ? Colors.white30 : Colors.black38)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildActivityLineChart(InventoryProvider provider, bool isDark, Color bg) {
     return Container(

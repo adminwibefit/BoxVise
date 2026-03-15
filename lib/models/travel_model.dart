@@ -28,6 +28,8 @@ class TravelItemStatus {
   Map<String, dynamic> toMap(String sessionId) => {
     'session_id': sessionId,
     'box_id': boxId,
+    'box_name': boxName,
+    'location': location,
     'status': status.name,
   };
 

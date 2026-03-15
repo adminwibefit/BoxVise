@@ -235,11 +235,15 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
     final allDone = verifiedCount == total && total > 0;
     final progress = total == 0 ? 0.0 : verifiedCount / total;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(20),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
           // ── Trip Header ──
           Container(
             padding: const EdgeInsets.all(20),
@@ -274,12 +278,12 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                   children: [
                     Icon(Icons.circle, size: 6, color: isDark ? Colors.white30 : Colors.black26),
                     const SizedBox(width: 8),
-                    Text(travel.fromLocation, style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : Colors.black54)),
+                    Text(travel.fromLocation, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.black87)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Icon(Icons.arrow_forward_rounded, size: 14, color: isDark ? Colors.white30 : Colors.black26),
                     ),
-                    Text(travel.toLocation, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? Colors.white70 : Colors.black87)),
+                    Text(travel.toLocation, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.black87)),
                   ],
                 ),
               ],
@@ -313,7 +317,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          allDone ? 'Verification Complete' : 'Verifying Boxes',
+                          allDone ? 'All Boxes Verified' : 'Verification',
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: isDark ? Colors.white : Colors.black87),
                         ),
                       ],
@@ -343,67 +347,20 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                     minHeight: 6,
                   ),
                 ),
-                const SizedBox(height: 20),
-
-                // Stats — label: value format
-                Row(
-                  children: [
-                    Expanded(
-                      child: _labelValueStat('Verified', '$verifiedCount', Colors.green, isDark),
-                    ),
-                    Container(width: 1, height: 36, color: isDark ? Colors.white.withAlpha(6) : Colors.black.withAlpha(5)),
-                    Expanded(
-                      child: _labelValueStat('Remaining', '$remaining', Colors.orange, isDark),
-                    ),
-                    Container(width: 1, height: 36, color: isDark ? Colors.white.withAlpha(6) : Colors.black.withAlpha(5)),
-                    Expanded(
-                      child: _labelValueStat('Total', '$total', isDark ? Colors.white54 : Colors.black45, isDark),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Box step indicators
-                SizedBox(
-                  height: 46,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: total,
-                    separatorBuilder: (_, __) => Container(
-                      width: 16, height: 1,
-                      margin: const EdgeInsets.only(top: 18),
-                      color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(8),
-                    ),
-                    itemBuilder: (ctx, i) {
-                      final isVerified = travel.itemStatuses[i].status == TravelStatus.unloaded;
-                      return Column(
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            width: 28, height: 28,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isVerified ? Colors.green : (isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(6)),
-                              border: Border.all(
-                                color: isVerified ? Colors.green : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-                                width: 2,
-                              ),
-                            ),
-                            child: isVerified
-                                ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
-                                : Center(child: Text('${i + 1}', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: isDark ? Colors.white30 : Colors.black26))),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'B${i + 1}',
-                            style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: isVerified ? Colors.green : (isDark ? Colors.white24 : Colors.black26)),
-                          ),
-                        ],
-                      );
-                    },
+                const SizedBox(height: 14),
+                
+                // Compact verified count
+                Text(
+                  '$verifiedCount/$total',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 20),
+
+
 
                 // Scan button
                 SizedBox(
@@ -435,33 +392,53 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
           ),
           const SizedBox(height: 24),
 
-          // ── Checklist ──
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Boxes', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-              Text('Tap to check manually', style: TextStyle(fontSize: 11, color: isDark ? Colors.white30 : Colors.black26)),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: travel.itemStatuses.length,
-            itemBuilder: (ctx, i) {
-              final item = travel.itemStatuses[i];
-              final boxModel = provider.boxes.firstWhereOrNull((b) => b.id == item.boxId)
-                  ?? _newTripBoxes.firstWhereOrNull((b) => b.id == item.boxId);
-              return _buildTravelBoxTile(provider, travel.id, item, boxModel);
-            },
-          ),
-          const SizedBox(height: 24),
+        ),
 
-          // ── Complete Trip ──
+        // ── Boxes Section Header ──
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          sliver: SliverToBoxAdapter(
+            child: Text(
+              'Boxes',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+          ),
+        ),
+
+        // List of boxes (SliverList for performance on 1000+ items)
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (ctx, i) {
+                final item = travel.itemStatuses[i];
+                final boxModel = provider.boxes.firstWhereOrNull((b) => b.id == item.boxId)
+                    ?? _newTripBoxes.firstWhereOrNull((b) => b.id == item.boxId);
+                return _buildTravelBoxTile(provider, travel.id, item, boxModel);
+              },
+              childCount: travel.itemStatuses.length,
+            ),
+          ),
+        ),
+
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              children: [
+
+          // ── Finish Trip ──
           SizedBox(
             width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
+            height: 56,
+            child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: allDone ? Colors.green : (isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(6)),
                 foregroundColor: allDone ? Colors.white : (isDark ? Colors.white38 : Colors.black26),
@@ -469,15 +446,19 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: allDone ? () => _confirmEndTravel(provider, travel) : null,
-              child: Text(
-                allDone ? 'Complete Trip' : 'Verify all boxes to complete',
+              icon: Icon(allDone ? Icons.check_circle_rounded : Icons.lock_rounded, size: 20),
+              label: Text(
+                allDone ? 'Finish & Archive Trip' : 'Verify All to Finish',
                 style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
               ),
             ),
           ),
           const SizedBox(height: 40),
-        ],
-      ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -498,16 +479,13 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
     IconData statusIcon;
     Color statusColor;
     
-    // Auto-calculate box status based on item statuses if applicable
     int unloadedItems = status.itemStatuses.where((s) => s.status == TravelStatus.unloaded).length;
-    int loadedItems = status.itemStatuses.where((s) => s.status == TravelStatus.loaded).length;
     int totalItems = status.itemStatuses.length;
 
     TravelStatus visualStatus = status.status;
-    // Overriding the box status visually if all items are unloaded/loaded for better UX. We still save manual status in DB if done explicitly.
-    if (totalItems > 0) {
-      if (unloadedItems == totalItems) visualStatus = TravelStatus.unloaded;
-      else if (loadedItems == totalItems) visualStatus = TravelStatus.loaded;
+    // Overriding the box status visually if all items are unloaded for better UX. We still save manual status in DB if done explicitly.
+    if (totalItems > 0 && unloadedItems == totalItems) {
+      visualStatus = TravelStatus.unloaded;
     }
 
     switch (visualStatus) {
@@ -539,7 +517,16 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
             child: Icon(statusIcon, color: statusColor, size: 24),
           ),
         ),
-        title: Text(status.boxName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(
+          (box?.name != null && box!.name!.trim().isNotEmpty)
+              ? box.name!.trim()
+              : (status.boxName.trim().isNotEmpty ? status.boxName.trim() : 'Box ${status.boxId.length > 4 ? status.boxId.substring(status.boxId.length - 4) : status.boxId}'),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+          ),
+        ),
         subtitle: Text('Status: ${visualStatus.name.toUpperCase()} • $totalItems Items', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -573,16 +560,14 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                   onSelected: (val) => provider.updateTravelItemStatus(travelId, status.boxId, itemDetail.id, val),
                   itemBuilder: (ctx) => const [
                     PopupMenuItem(value: TravelStatus.pending, child: Text('Pending')),
-                    PopupMenuItem(value: TravelStatus.loaded, child: Text('Loaded')),
                     PopupMenuItem(value: TravelStatus.unloaded, child: Text('Unloaded')),
                     PopupMenuItem(value: TravelStatus.missing, child: Text('Missing', style: TextStyle(color: Colors.red))),
                   ],
                 ),
                 onTap: () {
-                   // Cycle through statuses on tap
+                   // Cycle through statuses on tap (skipping 'loaded')
                    TravelStatus next;
-                   if (itemStat == TravelStatus.pending) next = TravelStatus.loaded;
-                   else if (itemStat == TravelStatus.loaded) next = TravelStatus.unloaded;
+                   if (itemStat == TravelStatus.pending) next = TravelStatus.unloaded;
                    else next = TravelStatus.pending;
                    provider.updateTravelItemStatus(travelId, status.boxId, itemDetail.id, next);
                 },
@@ -612,13 +597,8 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
               onTap: () { provider.updateTravelStatus(travelId, status.boxId, TravelStatus.pending); Navigator.pop(ctx); },
             ),
             ListTile(
-              leading: const Icon(Icons.check_circle_rounded, color: Colors.orange),
-              title: const Text('Mark as Loaded'),
-              onTap: () { provider.updateTravelStatus(travelId, status.boxId, TravelStatus.loaded); Navigator.pop(ctx); },
-            ),
-            ListTile(
               leading: const Icon(Icons.verified_rounded, color: Colors.green),
-              title: const Text('Mark as Unloaded'),
+              title: const Text('Mark as Unloaded (Verified)'),
               onTap: () { provider.updateTravelStatus(travelId, status.boxId, TravelStatus.unloaded); Navigator.pop(ctx); },
             ),
             ListTile(

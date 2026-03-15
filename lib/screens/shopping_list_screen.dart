@@ -66,12 +66,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '$totalItems items needed',
+                                  '$totalItems Items',
                                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-                                ),
-                                Text(
-                                  'Ready for your next supply run',
-                                  style: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : Colors.black38),
                                 ),
                               ],
                             ),
@@ -130,7 +126,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       child: EmptyStateWidget(
         icon: Icons.shopping_basket_outlined,
         title: 'Your list is empty',
-        subtitle: 'Add items or let low-stock alerts build your list.',
+        subtitle: '',
+        lottieUrl: 'https://assets5.lottiefiles.com/private_files/lf30_gjnofv35.json',
       ),
     );
   }
@@ -331,7 +328,7 @@ class _AddItemsSheetState extends State<_AddItemsSheet> {
           Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withAlpha(50), borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 24),
           if (_mode == 'main') _buildMainOptions(),
-          if (_mode == 'boxes') _buildBoxPicker(),
+          if (_mode == 'boxes' || _mode == 'pick_box_for_item') _buildBoxPicker(),
           if (_mode == 'items') _buildItemPicker(),
           const SizedBox(height: 32),
         ],
@@ -345,7 +342,7 @@ class _AddItemsSheetState extends State<_AddItemsSheet> {
         const Text('Add to Shopping List', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
         const SizedBox(height: 24),
         _optionTile(Icons.inventory_2_rounded, 'Add a Box', 'Add an entire box to shop for', () => setState(() => _mode = 'boxes')),
-        _optionTile(Icons.category_rounded, 'Add specific Item', 'Pick an individual item from any box', () => setState(() => _mode = 'boxes')),
+        _optionTile(Icons.category_rounded, 'Add specific Item', 'Pick an individual item from any box', () => setState(() => _mode = 'pick_box_for_item')),
 
       ],
     );
@@ -369,7 +366,7 @@ class _AddItemsSheetState extends State<_AddItemsSheet> {
                   if (_mode == 'boxes') {
                     widget.provider.addToShoppingList(box);
                     Navigator.pop(context);
-                  } else {
+                  } else if (_mode == 'pick_box_for_item') {
                     setState(() {
                       _selectedBox = box;
                       _mode = 'items';

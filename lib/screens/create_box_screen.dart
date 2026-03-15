@@ -17,7 +17,7 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
   final _nameController = TextEditingController();
   final _locationController = TextEditingController();
   final _capacityController = TextEditingController(text: '0');
-  String _selectedCategory = 'Other';
+  final _categoryController = TextEditingController();
   
   final List<String> _locationSuggestions = [
     'House > Bedroom', 'House > Kitchen', 'Garage > Shelf 1', 'Garage > Shelf 2', 
@@ -25,7 +25,7 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
   ];
   
   final List<String> _categories = [
-    'Clothing', 'Tools', 'Documents', 'Kitchen', 'Electronics', 'Other', 'Add Custom...'
+    'Clothing', 'Tools', 'Documents', 'Kitchen', 'Electronics', 'Other'
   ];
 
   late int _randomColorIndex;
@@ -52,6 +52,7 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
     _nameController.dispose();
     _locationController.dispose();
     _capacityController.dispose();
+    _categoryController.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -229,22 +230,30 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
                           children: [
                             const Text('Category', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _selectedCategory,
-                              decoration: const InputDecoration(prefixIcon: Icon(Icons.category_outlined)),
-                              items: _categories.map((cat) => DropdownMenuItem(
-                                value: cat, 
-                                child: Text(cat, style: TextStyle(
-                                  color: cat == 'Add Custom...' ? AppTheme.primaryColor : null,
-                                  fontWeight: cat == 'Add Custom...' ? FontWeight.bold : null,
-                                )),
-                              )).toList(),
-                              onChanged: (val) {
-                                if (val == 'Add Custom...') {
-                                  _showCustomCategoryDialog();
-                                } else if (val != null) {
-                                  setState(() => _selectedCategory = val);
+                            Autocomplete<String>(
+                              optionsBuilder: (textEditingValue) {
+                                if (textEditingValue.text.isEmpty) return _categories;
+                                return _categories.where((option) => option.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                              },
+                              onSelected: (selection) => _categoryController.text = selection,
+                              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                                if (controller.text.isEmpty && _categoryController.text.isNotEmpty) {
+                                  controller.text = _categoryController.text;
                                 }
+                                return TextFormField(
+                                  controller: controller,
+                                  focusNode: focusNode,
+                                  textCapitalization: TextCapitalization.words,
+                                  decoration: const InputDecoration(
+                                    hintText: 'e.g. Tools',
+                                    prefixIcon: Icon(Icons.category_outlined),
+                                  ),
+                                  onChanged: (v) => _categoryController.text = v,
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) return 'Please enter a category';
+                                    return null;
+                                  },
+                                );
                               },
                             ),
                           ],
@@ -290,51 +299,6 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
   }
 
 
-  void _showCustomCategoryDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Custom Category', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: controller,
-          textCapitalization: TextCapitalization.words,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'e.g. Hobby Gear',
-            labelText: 'Category Name',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final val = controller.text.trim();
-              if (val.isNotEmpty) {
-                setState(() {
-                  // Add to list before "Add Custom..."
-                  if (!_categories.contains(val)) {
-                    _categories.insert(_categories.length - 1, val);
-                  }
-                  _selectedCategory = val;
-                });
-              }
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _createBox() async {
     if (_formKey.currentState!.validate()) {
       final provider = Provider.of<InventoryProvider>(context, listen: false);
@@ -342,7 +306,7 @@ class _CreateBoxScreenState extends State<CreateBoxScreen>
       await provider.addBox(
         name: _nameController.text.trim(),
         location: _locationController.text.trim(),
-        category: _selectedCategory,
+        category: _categoryController.text.trim().isEmpty ? 'Other' : _categoryController.text.trim(),
         colorValue: AppTheme.boxColors[_randomColorIndex].value,
         capacity: int.tryParse(_capacityController.text) ?? 0,
       );

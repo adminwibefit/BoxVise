@@ -19,7 +19,6 @@ class _BoxesScreenState extends State<BoxesScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchCtrl = TextEditingController();
   
-  String _selectedLocation = 'All';
   String _sortBy = 'Recently Added';
   int _loadedCount = 10;
   bool _isSearching = false;
@@ -61,11 +60,6 @@ class _BoxesScreenState extends State<BoxesScreen> {
         final matchesItem = b.items.any((i) => (i.name ?? '').toLowerCase().contains(query));
         return matchesBox || matchesLoc || matchesItem;
       }).toList();
-    }
-
-    // Location Filter
-    if (_selectedLocation != 'All') {
-      boxes = boxes.where((b) => b.location == _selectedLocation).toList();
     }
 
     // Sorting
@@ -213,42 +207,6 @@ class _BoxesScreenState extends State<BoxesScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                   child: Row(
                     children: [
-                      // Location filter pill
-                      GestureDetector(
-                        onTap: () => _showLocationPicker(context, provider, isDark),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _selectedLocation != 'All'
-                                ? AppTheme.primaryColor
-                                : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: _selectedLocation != 'All'
-                                ? AppTheme.primaryColor
-                                : (isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10))),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.location_on_rounded, size: 14,
-                                color: _selectedLocation != 'All' ? Colors.white : (isDark ? Colors.white54 : Colors.black45)),
-                              const SizedBox(width: 6),
-                              Text(
-                                _selectedLocation == 'All' ? 'Location' : _selectedLocation,
-                                style: TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.w700,
-                                  color: _selectedLocation != 'All' ? Colors.white : (isDark ? Colors.white54 : Colors.black54),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(Icons.keyboard_arrow_down_rounded, size: 16,
-                                color: _selectedLocation != 'All' ? Colors.white70 : (isDark ? Colors.white30 : Colors.black26)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
                       // Sort pill
                       GestureDetector(
                         onTap: () => _showSortPicker(context, isDark),
@@ -279,22 +237,7 @@ class _BoxesScreenState extends State<BoxesScreen> {
                 ),
               ),
 
-              // Active filter tag (dismissible)
-              if (_selectedLocation != 'All' || _searchCtrl.text.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                    child: Wrap(
-                      spacing: 8,
-                      children: [
-                        if (_selectedLocation != 'All')
-                          _activeFilterTag(_selectedLocation, () => setState(() => _selectedLocation = 'All'), isDark),
-                        if (_searchCtrl.text.isNotEmpty)
-                          _activeFilterTag('"${_searchCtrl.text}"', () => setState(() => _searchCtrl.clear()), isDark),
-                      ],
-                    ),
-                  ),
-                ),
+
 
               if (allFiltered.isEmpty)
                 SliverFillRemaining(
@@ -377,70 +320,7 @@ class _BoxesScreenState extends State<BoxesScreen> {
     );
   }
 
-  void _showLocationPicker(BuildContext context, InventoryProvider provider, bool isDark) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F172A) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Location', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(ctx),
-                    child: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : Colors.black38),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(8)),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                children: [
-                  _locationItem('All', 'All', ctx, isDark),
-                  ...provider.allLocations.map((loc) => _locationItem(loc, loc, ctx, isDark)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _locationItem(String label, String value, BuildContext ctx, bool isDark) {
-    final isSelected = _selectedLocation == value;
-    return ListTile(
-      onTap: () {
-        setState(() => _selectedLocation = value);
-        Navigator.pop(ctx);
-      },
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-      leading: Icon(
-        isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-        size: 20,
-        color: isSelected ? AppTheme.primaryColor : (isDark ? Colors.white30 : Colors.black26),
-      ),
-      title: Text(label, style: TextStyle(
-        fontSize: 14,
-        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-        color: isSelected ? AppTheme.primaryColor : null,
-      )),
-    );
-  }
 
   void _showSortPicker(BuildContext context, bool isDark) {
     final sorts = ['Recently Added', 'Oldest First', 'Name A-Z', 'Name Z-A', 'Item Count (High)', 'Item Count (Low)'];

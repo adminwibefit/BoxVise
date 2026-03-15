@@ -61,22 +61,15 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
-            expandedHeight: 140,
             pinned: true,
             stretch: true,
             backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
             elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppTheme.primaryColor.withAlpha(20), Colors.transparent],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
             ),
+            title: const Text('Planner', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
             actions: [
               IconButton(
                 onPressed: () => provider.generateSmartPlannerTasks(),
@@ -85,39 +78,9 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
               ),
               const SizedBox(width: 8),
             ],
-          ),
-
-          // ── Intelligence Hub Carousel ──
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 200,
-              child: PageView(
-                controller: PageController(viewportFraction: 0.9),
-                children: [
-                  _hubCard(
-                    'Expiry Monitor',
-                    'Tracking perishables and expiring boxes.',
-                    Icons.history_toggle_off_rounded,
-                    Colors.redAccent,
-                    '${provider.expiringItems.length} items expiring',
-                  ),
-                  _hubCard(
-                    'Lending Radar',
-                    'Keeping track of everything you lent.',
-                    Icons.handshake_rounded,
-                    Colors.indigo,
-                    'Check lending history',
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Tab Bar Section ──
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _SliverAppBarDelegate(
-              TabBar(
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(48),
+              child: TabBar(
                 controller: _tabController,
                 isScrollable: false,
                 indicatorWeight: 4,
@@ -131,9 +94,9 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
                   Tab(text: 'COMPLETED (${completedTasks.length})'),
                 ],
               ),
-              isDark ? const Color(0xFF0F172A) : Colors.white,
             ),
           ),
+
 
           // ── Task List ──
           SliverPadding(
@@ -190,7 +153,7 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
       return EmptyStateWidget(
         icon: Icons.assignment_turned_in_rounded,
         title: 'All caught up!',
-        subtitle: 'No pending actions in the Intelligence Hub.',
+        subtitle: 'No pending actions.',
         lottieUrl: 'https://assets9.lottiefiles.com/packages/lf20_yupe9pda.json',
       );
     }

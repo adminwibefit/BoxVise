@@ -480,6 +480,12 @@ class _HomeTab extends StatelessWidget {
     return Consumer<InventoryProvider>(
       builder: (context, provider, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
+        final int cols = MediaQuery.of(context).size.width > 600 ? 4 : 2;
+        final int totalBoxes = provider.boxes.length;
+        final int shownBoxes = _boxGridCount(totalBoxes, cols);
+        final String boxHeaderTrailing = totalBoxes == 0 
+            ? '0 boxes' 
+            : '$totalBoxes Total';
 
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -488,27 +494,58 @@ class _HomeTab extends StatelessWidget {
               floating: true,
               snap: true,
               toolbarHeight: 70,
-              title: RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1,
-                    fontFamily: 'Outfit', // Assuming Outfit is used as per planning
-                  ),
-                  children: [
-                    TextSpan(
-                      text: 'Box',
-                      style: TextStyle(color: AppTheme.primaryColor),
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppTheme.primaryColor, AppTheme.primaryColor.withBlue(220)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withAlpha(70),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    TextSpan(
-                      text: 'vise',
+                    child: const Text(
+                      'B',
                       style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.8,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                      children: [
+                        const TextSpan(text: 'ox'),
+                        TextSpan(
+                          text: 'vise',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               actions: [
 
@@ -554,24 +591,35 @@ class _HomeTab extends StatelessWidget {
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Welcome,',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white70 : Colors.black54,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          '🤝',
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          _getGreeting(),
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.8,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
-                    const Text(
-                      'Boxvise User',
+                    const SizedBox(height: 4),
+                    Text(
+                      'Here\'s your inventory at a glance.',
                       style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white38 : Colors.black38,
                       ),
                     ),
                   ],
@@ -636,7 +684,7 @@ class _HomeTab extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: _sectionHeader(context, 'Box Overview', trailing: '${provider.totalBoxes} boxes'),
+                child: _sectionHeader(context, 'Box Overview'),
               ),
             ),
 
@@ -697,11 +745,11 @@ class _HomeTab extends StatelessWidget {
                         ),
                       );
                     },
-                    childCount: _boxGridCount(provider.boxes.length, MediaQuery.of(context).size.width > 600 ? 4 : 2),
+                    childCount: shownBoxes,
                   ),
                 ),
               ),
-              if (provider.boxes.length > _boxGridCount(provider.boxes.length, MediaQuery.of(context).size.width > 600 ? 4 : 2))
+              if (totalBoxes > shownBoxes)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20),
@@ -722,13 +770,13 @@ class _HomeTab extends StatelessWidget {
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
+                            children: const [
                               Text(
-                                'View All ${provider.boxes.length} Boxes',
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.primaryColor),
+                                'View All Boxes',
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.primaryColor),
                               ),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.arrow_forward_rounded, size: 16, color: AppTheme.primaryColor),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 16, color: AppTheme.primaryColor),
                             ],
                           ),
                         ),
