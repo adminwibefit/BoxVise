@@ -325,12 +325,7 @@ class _HomeTab extends StatelessWidget {
 
   // Removed _showGeneratedQRs from here since it's now top-level
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
+
 
   Widget _buildAlertCard(BuildContext context, String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -528,18 +523,19 @@ class _HomeTab extends StatelessWidget {
                   RichText(
                     text: TextSpan(
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 26,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: -0.8,
+                        fontStyle: FontStyle.italic,
+                        letterSpacing: -1.2,
                         color: isDark ? Colors.white : Colors.black,
                       ),
                       children: [
-                        const TextSpan(text: 'ox'),
+                        const TextSpan(text: 'BOX'),
                         TextSpan(
-                          text: 'vise',
+                          text: 'VISE',
                           style: TextStyle(
                             color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ],
@@ -597,27 +593,27 @@ class _HomeTab extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          '🤝',
-                          style: const TextStyle(fontSize: 28),
+                        const Text(
+                          '👋',
+                          style: TextStyle(fontSize: 28),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Text(
-                          _getGreeting(),
+                          'Great to see you!',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: -0.8,
+                            letterSpacing: -1.0,
                             color: isDark ? Colors.white : Colors.black,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      'Here\'s your inventory at a glance.',
+                      'Ready to organize your day?',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: isDark ? Colors.white38 : Colors.black38,
                       ),
