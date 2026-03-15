@@ -633,7 +633,7 @@ class _HomeTab extends StatelessWidget {
                       'Inventory Overview',
                       'Review all your records and storage distribution.',
                       Icons.analytics_rounded,
-                      AppTheme.warningColor,
+                      AppTheme.primaryColor,
                       'View Details',
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
                     ),
