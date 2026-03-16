@@ -56,14 +56,14 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
     final completedTasks = provider.plannerTasks.where((t) => t['isCompleted'] == true).toList();
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0D1829) : const Color(0xFFF8FAFC),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
             pinned: true,
             stretch: true,
-            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF0D1829) : Colors.white,
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
@@ -128,7 +128,7 @@ class _PlannerScreenState extends State<PlannerScreen> with SingleTickerProvider
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? const Color(0xFF152540) : Colors.white,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: color.withAlpha(40)),
         boxShadow: [

@@ -71,7 +71,7 @@ class CollaboratorsScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: Theme.of(context).brightness == Brightness.dark 
-                          ? const Color(0xFF1E293B) 
+                          ? const Color(0xFF152540) 
                           : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.grey.withAlpha(26)),

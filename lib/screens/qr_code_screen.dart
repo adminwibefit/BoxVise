@@ -58,7 +58,7 @@ class QrCodeScreen extends StatelessWidget {
                       version: QrVersions.auto,
                       size: 220,
                       eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: color),
-                      dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: const Color(0xFF1A1A2E)),
+                      dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: const Color(0xFF152540)),
                     ),
                     const SizedBox(height: 16),
                     Container(
@@ -71,7 +71,7 @@ class QrCodeScreen extends StatelessWidget {
                         box.uuid?.substring(0, 8).toUpperCase() ?? '',
                         style: const TextStyle(
                           fontSize: 13, fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A2E), letterSpacing: 1.5, fontFamily: 'monospace',
+                          color: Color(0xFF152540), letterSpacing: 1.5, fontFamily: 'monospace',
                         ),
                       ),
                     ),

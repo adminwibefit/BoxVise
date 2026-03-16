@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../providers/inventory_provider.dart';
 import '../services/database_service.dart';
 import '../theme/app_theme.dart';
@@ -18,7 +20,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _cityController = TextEditingController();
   final _bioController = TextEditingController();
   bool _isSaving = false;
-  bool _isEditing = false; // Toggle for Edit Mode
+  bool _isEditing = false;
+  String? _photoPath;
 
   @override
   void initState() {
@@ -32,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final phone = await DatabaseService.getSetting('profile_phone', defaultValue: '');
     final city = await DatabaseService.getSetting('profile_city', defaultValue: '');
     final bio = await DatabaseService.getSetting('profile_bio', defaultValue: '');
+    final photo = await DatabaseService.getSetting('profile_photo', defaultValue: '');
 
     if (!mounted) return;
     setState(() {
@@ -40,7 +44,109 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _phoneController.text = phone;
       _cityController.text = city;
       _bioController.text = bio;
+      _photoPath = photo.isEmpty ? null : photo;
     });
+  }
+
+  Future<void> _pickPhoto(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF152540) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withAlpha(80),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Profile Photo',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            ),
+            const SizedBox(height: 14),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.camera_alt_rounded,
+                    size: 18, color: AppTheme.primaryColor),
+              ),
+              title: const Text('Take Photo',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.photo_library_rounded,
+                    size: 18, color: AppTheme.accentColor),
+              ),
+              title: const Text('Choose from Gallery',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            if (_photoPath != null)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                    color: AppTheme.errorColor.withAlpha(20),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.delete_rounded,
+                      size: 18, color: AppTheme.errorColor),
+                ),
+                title: const Text('Remove Photo',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.errorColor)),
+                onTap: () => Navigator.pop(context, null),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    // null return means "Remove Photo"
+    if (source == null && _photoPath != null) {
+      setState(() => _photoPath = null);
+      await DatabaseService.setSetting('profile_photo', '');
+      return;
+    }
+    if (source == null) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+        source: source, imageQuality: 80, maxWidth: 600);
+    if (picked == null || !mounted) return;
+
+    setState(() => _photoPath = picked.path);
+    await DatabaseService.setSetting('profile_photo', picked.path);
   }
 
   Future<void> _saveProfile() async {
@@ -56,6 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await DatabaseService.setSetting('profile_phone', _phoneController.text.trim());
     await DatabaseService.setSetting('profile_city', _cityController.text.trim());
     await DatabaseService.setSetting('profile_bio', _bioController.text.trim());
+    await DatabaseService.setSetting('profile_photo', _photoPath ?? '');
 
     if (!mounted) return;
     setState(() {
@@ -82,10 +189,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bg = isDark ? const Color(0xFF152540) : Colors.white;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0D1829) : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w900)),
         backgroundColor: Colors.transparent,
@@ -114,19 +221,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  Stack(
-                    children: [
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppTheme.primaryColor.withAlpha(20),
-                          border: Border.all(color: AppTheme.primaryColor.withAlpha(40), width: 3),
+                  GestureDetector(
+                    onTap: () => _pickPhoto(context),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppTheme.primaryColor.withAlpha(20),
+                            border: Border.all(
+                                color: AppTheme.primaryColor.withAlpha(40), width: 3),
+                          ),
+                          child: _photoPath != null && File(_photoPath!).existsSync()
+                              ? ClipOval(
+                                  child: Image.file(
+                                    File(_photoPath!),
+                                    width: 90, height: 90,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : const Icon(Icons.person_rounded,
+                                  size: 48, color: AppTheme.primaryColor),
                         ),
-                        child: const Icon(Icons.person_rounded, size: 48, color: AppTheme.primaryColor),
-                      ),
-                      if (_isEditing)
                         Positioned(
                           bottom: 0,
                           right: 0,
@@ -137,10 +255,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               shape: BoxShape.circle,
                               border: Border.all(color: bg, width: 2),
                             ),
-                            child: const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white),
+                            child: const Icon(Icons.camera_alt_rounded,
+                                size: 14, color: Colors.white),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(

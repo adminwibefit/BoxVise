@@ -45,7 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0D1829) : const Color(0xFFF8FAFC),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -53,7 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             expandedHeight: 140,
             floating: false,
             pinned: true,
-            backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+            backgroundColor: isDark ? const Color(0xFF0D1829) : const Color(0xFFF8FAFC),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 'Settings',
@@ -94,8 +94,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       value: provider.isDarkMode,
                       onChanged: (val) => provider.toggleDarkMode(),
                     ),
-                    _buildDivider(),
-                    _buildThemeColorTile(context, provider),
                    ]),
 
 
@@ -229,7 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? const Color(0xFF152540) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5)),
         boxShadow: isDark ? [] : [
@@ -340,15 +338,133 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showResetConfirmation(BuildContext context, InventoryProvider provider) {
+    final confirmCtrl = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Factory Reset?'),
-        content: const Text('All data will be permanently erased.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(onPressed: () { provider.resetAllData(); Navigator.pop(ctx); }, child: const Text('ERASE', style: TextStyle(color: Colors.red))),
-        ],
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) {
+          final canErase = confirmCtrl.text.trim() == 'ERASE';
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withAlpha(20),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.warning_rounded, color: Colors.red, size: 20),
+                ),
+                const SizedBox(width: 10),
+                const Text('Factory Reset',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withAlpha(12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.withAlpha(40)),
+                  ),
+                  child: const Text(
+                    'This will permanently delete all boxes, items, and settings. This action cannot be undone.',
+                    style: TextStyle(fontSize: 13, color: Colors.red, height: 1.4),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Type ERASE to confirm',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: confirmCtrl,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: (_) => setState(() {}),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: canErase ? Colors.red : null,
+                    letterSpacing: 1.5,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'ERASE',
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white24 : Colors.black26,
+                      letterSpacing: 1.5,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: canErase ? Colors.red : Colors.transparent,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: canErase ? Colors.red.withAlpha(120) : Colors.transparent,
+                        width: 1.5,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: canErase ? Colors.red : Colors.grey.withAlpha(80),
+                        width: 1.5,
+                      ),
+                    ),
+                    suffixIcon: canErase
+                        ? const Icon(Icons.check_circle_rounded, color: Colors.red, size: 20)
+                        : null,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: canErase
+                    ? () {
+                        provider.resetAllData();
+                        Navigator.pop(ctx);
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.red.withAlpha(40),
+                  disabledForegroundColor: Colors.red.withAlpha(100),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: const Text('Erase Everything',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -358,47 +474,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
-  Widget _buildThemeColorTile(BuildContext context, InventoryProvider provider) {
-    return _buildSettingTile(
-      title: 'Theme', 
-      subtitle: '', 
-      icon: Icons.palette_rounded, 
-      iconColor: provider.primaryColor, 
-      onTap: () => _showThemeColorPicker(context, provider)
-    );
-  }
-
-  void _showThemeColorPicker(BuildContext context, InventoryProvider provider) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Pick Global Accent', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            GridView.builder(
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 16, mainAxisSpacing: 16),
-              itemCount: AppTheme.boxColors.length,
-              itemBuilder: (context, index) {
-                final color = AppTheme.boxColors[index];
-                final isSelected = provider.primaryColor.value == color.value;
-                return GestureDetector(
-                  onTap: () { provider.setPrimaryColor(color); Navigator.pop(ctx); },
-                  child: Container(
-                    decoration: BoxDecoration(color: color, shape: BoxShape.circle, border: isSelected ? Border.all(color: Colors.white, width: 3) : null),
-                    child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
 }

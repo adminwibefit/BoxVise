@@ -126,7 +126,7 @@ class _BoxesScreenState extends State<BoxesScreen> {
                       duration: const Duration(milliseconds: 250),
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        color: isDark ? const Color(0xFF152540) : Colors.white,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: _isSearching 
                             ? AppTheme.primaryColor.withAlpha(100) 
@@ -213,7 +213,7 @@ class _BoxesScreenState extends State<BoxesScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            color: isDark ? const Color(0xFF152540) : Colors.white,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
                           ),
@@ -259,7 +259,7 @@ class _BoxesScreenState extends State<BoxesScreen> {
                   sliver: SliverGrid(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.82,
+                      childAspectRatio: 1.05,
                       crossAxisSpacing: 14,
                       mainAxisSpacing: 14,
                     ),
@@ -329,7 +329,7 @@ class _BoxesScreenState extends State<BoxesScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          color: isDark ? const Color(0xFF0D1829) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(

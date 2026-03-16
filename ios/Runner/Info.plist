@@ -49,5 +49,9 @@
 	<string>Boxwise needs camera access to scan QR codes and take item photos</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Boxwise needs photo library access to attach photos to items</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Boxwise needs microphone access to enable voice search</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Boxwise uses speech recognition to search by voice</string>
 </dict>
 </plist>

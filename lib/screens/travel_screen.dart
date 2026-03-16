@@ -228,7 +228,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bg = isDark ? const Color(0xFF152540) : Colors.white;
     final verifiedCount = travel.itemStatuses.where((s) => s.status == TravelStatus.unloaded).length;
     final total = travel.itemStatuses.length;
     final remaining = total - verifiedCount;

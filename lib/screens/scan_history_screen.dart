@@ -60,7 +60,7 @@ class ScanHistoryScreen extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2A2A3E) : Colors.white,
+                    color: isDark ? const Color(0xFF1D3461) : Colors.white,
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(

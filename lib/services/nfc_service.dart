@@ -66,7 +66,7 @@ class _NfcSheetState extends State<NfcSheet> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: const BoxDecoration(
-        color: Color(0xFF1A1A2E),
+        color: Color(0xFF152540),
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(

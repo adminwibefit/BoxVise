@@ -7,6 +7,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'box_details_screen.dart';
 import '../models/box_model.dart';
 import '../models/item_model.dart';
+import 'dart:io';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -18,7 +19,8 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _searchCtrl = TextEditingController();
   List<Map<String, dynamic>> _results = [];
-  
+  List<BoxModel> _boxResults = [];
+
   // Filters
   final List<String> _selectedTags = [];
   final List<String> _selectedLocations = [];
@@ -60,6 +62,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _performSearch() {
     final provider = context.read<InventoryProvider>();
+    final q = _searchCtrl.text.toLowerCase().trim();
     setState(() {
       _results = provider.searchItems(
         _searchCtrl.text,
@@ -70,6 +73,16 @@ class _SearchScreenState extends State<SearchScreen> {
         dateFilter: _dateFilter,
         sortBy: _sortBy,
       );
+      // Box-level matches (name / location / category)
+      if (q.isNotEmpty) {
+        _boxResults = provider.boxes.where((b) {
+          return (b.name ?? '').toLowerCase().contains(q) ||
+              (b.location ?? '').toLowerCase().contains(q) ||
+              (b.category ?? '').toLowerCase().contains(q);
+        }).toList();
+      } else {
+        _boxResults = [];
+      }
     });
   }
 
@@ -81,6 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _quantityCategory = null;
       _dateFilter = null;
       _sortBy = 'name_asc';
+      _boxResults = [];
       _performSearch();
     });
   }
@@ -162,124 +176,112 @@ class _SearchScreenState extends State<SearchScreen> {
         
 
 
+        // ── Empty / idle state ──────────────────────────────────────────
         if (!isSearching && _searchCtrl.text.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Padding(
-              padding: const EdgeInsets.all(40),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.search_rounded, size: 80, color: Colors.grey.withAlpha(50)),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Find Anything',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Type or use filters',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else if (_results.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.withAlpha(80)),
-                const SizedBox(height: 24),
-                const Text('Nothing found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey)),
-                const SizedBox(height: 12),
-                const Text('Try different keywords', style: TextStyle(color: Colors.grey, fontSize: 15)),
-                const SizedBox(height: 32),
+                Icon(Icons.search_rounded, size: 72, color: Colors.grey.withAlpha(50)),
+                const SizedBox(height: 20),
+                const Text('Find Anything',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey)),
+                const SizedBox(height: 8),
+                const Text('Type to search boxes or items',
+                    style: TextStyle(color: Colors.grey, fontSize: 13)),
+              ],
+            ),
+          )
+
+        // ── No results ──────────────────────────────────────────────────
+        else if (_results.isEmpty && _boxResults.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off_rounded, size: 72, color: Colors.grey.withAlpha(80)),
+                const SizedBox(height: 20),
+                const Text('Nothing found',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey)),
+                const SizedBox(height: 8),
+                const Text('Try different keywords',
+                    style: TextStyle(color: Colors.grey, fontSize: 13)),
+                const SizedBox(height: 28),
                 TextButton.icon(
                   onPressed: _clearFilters,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Reset All Filters'),
+                  label: const Text('Reset Filters'),
                 ),
               ],
             ),
           )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final r = _results[index];
-                  final box = r['box'] as BoxModel;
-                  final item = r['item'] as ItemModel;
-                  final color = Color(box.colorValue ?? 0xFF2563EB);
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-                      boxShadow: [
-                        if (!isDark) BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 10, offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(12),
+        // ── Results ─────────────────────────────────────────────────────
+        else ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+
+                // ── BOXES section ────────────────────────────────────────
+                if (_boxResults.isNotEmpty) ...[
+                  _SectionHeader(
+                    icon: Icons.inventory_2_rounded,
+                    label: 'Boxes',
+                    count: _boxResults.length,
+                    color: AppTheme.primaryColor,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 8),
+                  ..._boxResults.map((box) {
+                    final color = Color(box.colorValue ?? AppTheme.primaryColor.value);
+                    return _BoxResultCard(
+                      box: box,
+                      color: color,
+                      isDark: isDark,
                       onTap: () {
                         context.read<InventoryProvider>().accessBox(box);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
                       },
-                      leading: Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: color.withAlpha(20),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Center(
-                          child: Icon(Icons.inventory_2_rounded, color: color, size: 28),
-                        ),
-                      ),
-                      title: Text(item.name ?? 'Unnamed Item', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(Icons.move_to_inbox_rounded, size: 12, color: isDark ? Colors.white38 : Colors.black38),
-                              const SizedBox(width: 4),
-                              Flexible(child: Text(box.name ?? 'Unnamed Box', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54), overflow: TextOverflow.ellipsis)),
-                              const SizedBox(width: 12),
-                              Icon(Icons.location_on_rounded, size: 12, color: isDark ? Colors.white38 : Colors.black38),
-                              const SizedBox(width: 4),
-                              Text(box.location ?? 'Home', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
-                            ],
-                          ),
-                        ],
-                      ),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: color.withAlpha(26),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${item.quantity}',
-                          style: TextStyle(fontWeight: FontWeight.w900, color: color, fontSize: 14),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                childCount: _results.length,
-              ),
+                    );
+                  }),
+                  if (_results.isNotEmpty) const SizedBox(height: 16),
+                ],
+
+                // ── ITEMS section ─────────────────────────────────────────
+                if (_results.isNotEmpty) ...[
+                  _SectionHeader(
+                    icon: Icons.widgets_rounded,
+                    label: 'Items',
+                    count: _results.length,
+                    color: AppTheme.accentColor,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 8),
+                  ..._results.map((r) {
+                    final box = r['box'] as BoxModel;
+                    final item = r['item'] as ItemModel;
+                    final color = Color(box.colorValue ?? AppTheme.primaryColor.value);
+                    return _ItemResultCard(
+                      item: item,
+                      box: box,
+                      color: color,
+                      isDark: isDark,
+                      onTap: () {
+                        context.read<InventoryProvider>().accessBox(box);
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
+                      },
+                    );
+                  }),
+                ],
+              ]),
             ),
           ),
+        ],
       ],
       ),
     );
@@ -316,6 +318,289 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+// ── Section header ────────────────────────────────────────────────────────────
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int count;
+  final Color color;
+  final bool isDark;
+
+  const _SectionHeader({
+    required this.icon,
+    required this.label,
+    required this.count,
+    required this.color,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withAlpha(22),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 14, color: color),
+        ),
+        const SizedBox(width: 8),
+        Text(label,
+            style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w800, color: color)),
+        const SizedBox(width: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withAlpha(22),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text('$count',
+              style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Box result card ───────────────────────────────────────────────────────────
+class _BoxResultCard extends StatelessWidget {
+  final BoxModel box;
+  final Color color;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _BoxResultCard({
+    required this.box,
+    required this.color,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF111827) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withAlpha(60)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46, height: 46,
+              decoration: BoxDecoration(
+                color: color.withAlpha(22),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(Icons.inventory_2_rounded, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(box.name ?? 'Unnamed Box',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_rounded, size: 11,
+                          color: isDark ? Colors.white38 : Colors.black38),
+                      const SizedBox(width: 3),
+                      Text(box.location ?? 'Unknown',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white.withAlpha(115) : Colors.black45)),
+                      const SizedBox(width: 10),
+                      Icon(Icons.label_rounded, size: 11,
+                          color: isDark ? Colors.white38 : Colors.black38),
+                      const SizedBox(width: 3),
+                      Text(box.category ?? 'Other',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white.withAlpha(115) : Colors.black45)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(20),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('${box.items.length} items',
+                      style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withAlpha(18),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text('BOX',
+                      style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.primaryColor,
+                          letterSpacing: 0.8)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Item result card ──────────────────────────────────────────────────────────
+class _ItemResultCard extends StatelessWidget {
+  final ItemModel item;
+  final BoxModel box;
+  final Color color;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _ItemResultCard({
+    required this.item,
+    required this.box,
+    required this.color,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF111827) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(8)),
+        ),
+        child: Row(
+          children: [
+            // Item icon or image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: item.imagePath != null && File(item.imagePath!).existsSync()
+                  ? Image.file(File(item.imagePath!),
+                      width: 46, height: 46, fit: BoxFit.cover)
+                  : Container(
+                      width: 46, height: 46,
+                      decoration: BoxDecoration(
+                        color: color.withAlpha(22),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.widgets_rounded, color: color, size: 20),
+                    ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.name ?? 'Unnamed Item',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.inventory_2_rounded, size: 11,
+                          color: isDark ? Colors.white38 : Colors.black38),
+                      const SizedBox(width: 3),
+                      Flexible(
+                        child: Text(box.name ?? 'Unknown Box',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? Colors.white.withAlpha(115) : Colors.black45)),
+                      ),
+                      const SizedBox(width: 10),
+                      Icon(Icons.location_on_rounded, size: 11,
+                          color: isDark ? Colors.white38 : Colors.black38),
+                      const SizedBox(width: 3),
+                      Text(box.location ?? 'Unknown',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white.withAlpha(115) : Colors.black45)),
+                    ],
+                  ),
+                  if (item.tags.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 4,
+                      children: item.tags
+                          .take(3)
+                          .map((t) => Text('#$t',
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: color,
+                                  fontWeight: FontWeight.w600)))
+                          .toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(20),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('${item.quantity}',
+                      style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w800, color: color)),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor.withAlpha(18),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text('ITEM',
+                      style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.accentColor,
+                          letterSpacing: 0.8)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 class _FilterModal extends StatefulWidget {
   final List<String> initialTags;
   final List<String> initialLocations;
@@ -382,7 +667,7 @@ class _FilterModalState extends State<_FilterModal> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        color: isDark ? const Color(0xFF0D1829) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -476,7 +761,7 @@ class _FilterModalState extends State<_FilterModal> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? (isDark ? const Color(0xFF1E293B) : Colors.white) : Colors.transparent,
+          color: isSelected ? (isDark ? const Color(0xFF152540) : Colors.white) : Colors.transparent,
           border: isSelected ? Border(left: BorderSide(color: AppTheme.primaryColor, width: 4)) : null,
         ),
         child: Column(

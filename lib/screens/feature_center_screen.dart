@@ -32,7 +32,7 @@ class FeatureCenterScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: isDark ? const Color(0xFF152540) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
                 ),
@@ -169,7 +169,7 @@ class FeatureCenterScreen extends StatelessWidget {
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: isDark ? const Color(0xFF152540) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
                 ),

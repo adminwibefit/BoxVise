@@ -179,7 +179,7 @@ class BoxCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected 
               ? AppTheme.primaryColor.withAlpha(26) 
-              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+              : (isDark ? const Color(0xFF152540) : Colors.white),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected 
@@ -490,7 +490,7 @@ class EmptyStateWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                color: isDark ? Colors.white : const Color(0xFF152540),
               ),
               textAlign: TextAlign.center,
             ),
@@ -585,9 +585,9 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
               end: Alignment(_animation.value, 0),
               colors: isDark
                   ? [
-                      const Color(0xFF2A2A3E),
+                      const Color(0xFF1D3461),
                       const Color(0xFF3A3A52),
-                      const Color(0xFF2A2A3E),
+                      const Color(0xFF1D3461),
                     ]
                   : [
                       Colors.grey.shade200,

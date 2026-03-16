@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../providers/inventory_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -37,6 +38,10 @@ class _PinLockScreenState extends State<PinLockScreen>
   }
 
   Future<void> _checkBiometrics() async {
+    if (kIsWeb || kDebugMode) {
+      setState(() => _canCheckBiometrics = false);
+      return;
+    }
     try {
       final canCheck = await _localAuth.canCheckBiometrics;
       final isDeviceSupported = await _localAuth.isDeviceSupported();
@@ -96,7 +101,7 @@ class _PinLockScreenState extends State<PinLockScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F23) : const Color(0xFFF5F5FA),
+      backgroundColor: isDark ? const Color(0xFF0D1829) : const Color(0xFFF5F5FA),
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

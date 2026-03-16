@@ -25,7 +25,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     final totalItems = lowStockItems.length + manualItems.length;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0D1829) : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Shopping List', style: TextStyle(fontWeight: FontWeight.w900)),
         backgroundColor: Colors.transparent,
@@ -169,7 +169,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? const Color(0xFF152540) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: isDark ? Colors.white.withAlpha(8) : Colors.black.withAlpha(5)),
         boxShadow: [
@@ -313,7 +313,7 @@ class _AddItemsSheetState extends State<_AddItemsSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bg = isDark ? const Color(0xFF152540) : Colors.white;
 
     return Container(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),

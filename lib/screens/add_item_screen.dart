@@ -93,7 +93,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF152540) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

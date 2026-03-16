@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/inventory_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/common_widgets.dart';
 import 'create_box_screen.dart';
 import 'box_details_screen.dart';
 import 'stats_screen.dart';
@@ -14,11 +13,8 @@ import 'boxes_screen.dart';
 import 'settings_screen.dart';
 import 'add_item_screen.dart';
 import 'qr_code_screen.dart';
-import 'qr_sheet_screen.dart';
 import 'shopping_list_screen.dart';
 import 'collaborators_screen.dart';
-import 'profile_screen.dart';
-import 'feature_center_screen.dart';
 import 'planner_screen.dart';
 import 'travel_screen.dart';
 
@@ -29,26 +25,8 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
-    with SingleTickerProviderStateMixin {
+class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
-  late AnimationController _fabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _fabController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _fabController.forward();
-  }
-
-  @override
-  void dispose() {
-    _fabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,110 +37,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           _HomeTab(),
           SearchScreen(),
           BoxesScreen(),
-          SettingsScreen(),
         ],
       ),
-      floatingActionButton: _currentIndex == 0
-          ? ScaleTransition(
-              scale: CurvedAnimation(
-                parent: _fabController,
-                curve: Curves.elasticOut,
-              ),
-              child: FloatingActionButton(
-                onPressed: () => _showQuickAddMenu(context),
-                child: const Icon(Icons.add_rounded, size: 30),
-              ),
-            )
-          : null,
       bottomNavigationBar: _buildBottomNav(context),
-    );
-  }
-
-  void _showQuickAddMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2A2A3E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withAlpha(100),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Text('Quick Add', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
-              GridView.count(
-                shrinkWrap: true,
-                crossAxisCount: 3,
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 10,
-                children: [
-                   _quickActionBtn(context, Icons.inventory_2_rounded, 'Create Box', AppTheme.primaryColor, () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
-                  }),
-                  _quickActionBtn(context, Icons.checklist_rounded, 'Add Item', Colors.indigo, () {
-                    Navigator.pop(ctx);
-                    final provider = context.read<InventoryProvider>();
-                    _showAddItemListDialog(context, provider);
-                  }),
-                  _quickActionBtn(context, Icons.qr_code_2_rounded, 'Generate QR', Colors.teal, () {
-                    Navigator.pop(ctx);
-                    final provider = context.read<InventoryProvider>();
-                    _showGeneratedQRs(context, provider);
-                  }),
-                  _quickActionBtn(context, Icons.qr_code_scanner_rounded, 'Scan QR', AppTheme.accentColor, () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
-                  }),
-                  _quickActionBtn(context, Icons.psychology_outlined, 'AI Vision', Colors.indigo, () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AiVisionScreen()));
-                  }),
-                  _quickActionBtn(context, Icons.import_export_rounded, 'Export Data', AppTheme.warningColor, () async {
-                    Navigator.pop(ctx);
-                    final provider = context.read<InventoryProvider>();
-                    _showExportDialog(context, provider);
-                  }),
-                ],
-              )
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _quickActionBtn(BuildContext context, IconData icon, String label, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color.withAlpha(26),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-        ],
-      ),
     );
   }
 
@@ -188,14 +65,12 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: NavigationBar(
             height: 75,
             elevation: 0,
-            backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF0D1829) : Colors.white,
             selectedIndex: _currentIndex,
-            onDestinationSelected: (index) {
-              setState(() => _currentIndex = index);
-            },
+            onDestinationSelected: (index) => setState(() => _currentIndex = index),
             destinations: [
               NavigationDestination(
-                icon: const Icon(Icons.dashboard_rounded),
+                icon: const Icon(Icons.home_rounded),
                 label: provider.translate('Home'),
               ),
               NavigationDestination(
@@ -203,12 +78,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 label: provider.translate('Search'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.grid_view_rounded),
+                icon: const Icon(Icons.inventory_2_rounded),
                 label: provider.translate('Boxes'),
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.settings_rounded),
-                label: provider.translate('Settings'),
               ),
             ],
           ),
@@ -217,33 +88,9 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  void _showExportDialog(BuildContext context, InventoryProvider provider) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Export Data'),
-        content: const Text('Choose format to export your inventory.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              provider.exportToCSV();
-            },
-            child: const Text('CSV'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              provider.exportToPDF();
-            },
-            child: const Text('PDF'),
-          ),
-        ],
-      ),
-    );
-  }
 }
+
+// ── Top-level helpers ─────────────────────────────────────────────────────────
 
 void _showGeneratedQRs(BuildContext context, InventoryProvider provider) {
   if (provider.boxes.isEmpty) {
@@ -252,7 +99,7 @@ void _showGeneratedQRs(BuildContext context, InventoryProvider provider) {
   }
   showModalBottomSheet(
     context: context,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (ctx) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -289,7 +136,7 @@ void _showAddItemListDialog(BuildContext context, InventoryProvider provider) {
   }
   showModalBottomSheet(
     context: context,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (ctx) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -319,224 +166,52 @@ void _showAddItemListDialog(BuildContext context, InventoryProvider provider) {
   );
 }
 
-// ===== HOME TAB =====
+// ── Home Tab ──────────────────────────────────────────────────────────────────
+
 class _HomeTab extends StatelessWidget {
   const _HomeTab();
-
-  // Removed _showGeneratedQRs from here since it's now top-level
-
-
-
-  Widget _buildAlertCard(BuildContext context, String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 220,
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withAlpha(20),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withAlpha(50)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withAlpha(30),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
-                  Text(subtitle, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, overflow: TextOverflow.ellipsis)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-  Widget _buildFeatureCard(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    String buttonText,
-    VoidCallback onTap,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: color.withAlpha(isDark ? 30 : 20),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: color.withAlpha(51)),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -20,
-            bottom: -20,
-            child: Icon(
-              icon,
-              size: 140,
-              color: color.withAlpha(20),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              height: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            subtitle,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white70 : Colors.black54,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withAlpha(40),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Icon(icon, color: color, size: 32),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: onTap,
-                  icon: Icon(icon, size: 18),
-                  label: Text(buttonText),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: color,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<InventoryProvider>(
       builder: (context, provider, _) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final int cols = MediaQuery.of(context).size.width > 600 ? 4 : 2;
-        final int totalBoxes = provider.boxes.length;
-        final int shownBoxes = _boxGridCount(totalBoxes, cols);
-        final String boxHeaderTrailing = totalBoxes == 0 
-            ? '0 boxes' 
-            : '$totalBoxes Total';
+        final recentBoxes = provider.recentBoxes;
+        final totalItems = provider.totalItems;
+        final totalBoxes = provider.boxes.length;
 
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
+            // ── App Bar ──
             SliverAppBar(
               floating: true,
               snap: true,
-              toolbarHeight: 70,
+              toolbarHeight: 68,
+              backgroundColor: isDark ? const Color(0xFF0D1829) : const Color(0xFFF5F6F8),
+              surfaceTintColor: Colors.transparent,
               title: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [AppTheme.primaryColor, AppTheme.primaryColor.withBlue(220)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withAlpha(70),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const Text(
-                      'B',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset('assets/images/logo.png', width: 34, height: 34, fit: BoxFit.cover),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 9),
                   RichText(
                     text: TextSpan(
                       style: TextStyle(
-                        fontSize: 26,
+                        fontSize: 22,
                         fontWeight: FontWeight.w900,
                         fontStyle: FontStyle.italic,
-                        letterSpacing: -1.2,
-                        color: isDark ? Colors.white : Colors.black,
+                        letterSpacing: -0.8,
+                        color: isDark ? Colors.white : const Color(0xFF0D1829),
                       ),
-                      children: [
-                        const TextSpan(text: 'BOX'),
+                      children: const [
+                        TextSpan(text: 'BOX'),
                         TextSpan(
                           text: 'VISE',
-                          style: TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w900,
-                          ),
+                          style: TextStyle(color: AppTheme.primaryColor),
                         ),
                       ],
                     ),
@@ -544,243 +219,70 @@ class _HomeTab extends StatelessWidget {
                 ],
               ),
               actions: [
-
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withAlpha(20),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen())),
-                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 24, color: AppTheme.primaryColor),
-                      ),
-                    ),
-                  ),
+                _AppBarBtn(
+                  icon: Icons.qr_code_scanner_rounded,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen())),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 14),
-                  child: GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [AppTheme.primaryColor, AppTheme.primaryColor.withAlpha(180)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(color: AppTheme.primaryColor.withAlpha(60), blurRadius: 12, offset: const Offset(0, 4)),
-                        ],
-                      ),
-                      child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
-                    ),
-                  ),
+                const SizedBox(width: 8),
+                _AppBarBtn(
+                  icon: Icons.settings_rounded,
+                  filled: true,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
                 ),
+                const SizedBox(width: 16),
               ],
             ),
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        const Text(
-                          '👋',
-                          style: TextStyle(fontSize: 28),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Great to see you!',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1.0,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ],
+
+                    // ── Hero Stats Banner ──
+                    _HeroBanner(
+                      totalBoxes: totalBoxes,
+                      totalItems: totalItems,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Ready to organize your day?',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white38 : Colors.black38,
+                    const SizedBox(height: 28),
+
+                    // ── Quick Actions ──
+                    const _SectionTitle('Quick Actions'),
+                    const SizedBox(height: 14),
+                    _QuickActionsRow(provider: provider),
+                    const SizedBox(height: 28),
+
+                    // ── Recent Boxes ──
+                    if (recentBoxes.isNotEmpty) ...[
+                      _SectionTitleRow(
+                        title: 'Recent Boxes',
+                        trailing: 'See All',
+                        onTrailing: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BoxesScreen())),
                       ),
-                    ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 130,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: recentBoxes.length > 6 ? 6 : recentBoxes.length,
+                          itemBuilder: (_, i) => _RecentBoxCard(box: recentBoxes[i]),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                    ],
+
+                    // ── Tools Grid ──
+                    const _SectionTitle('Explore'),
+                    const SizedBox(height: 14),
+                    _ToolsGrid(),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
             ),
-
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Column(
-                  children: [
-                    _buildFeatureCard(
-                      context,
-                      'Inventory Overview',
-                      'Review all your records and storage distribution.',
-                      Icons.analytics_rounded,
-                      AppTheme.primaryColor,
-                      'View Details',
-                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
-                    ),
-                    const SizedBox(height: 24),
-                    _sectionHeader(context, 'Quick Hub'),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _buildQuickHubCard(context, 'Create Box', Icons.add_box_rounded, AppTheme.accentColor, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()));
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Add Item', Icons.add_circle_rounded, AppTheme.primaryColor, () {
-                          final provider = context.read<InventoryProvider>();
-                          _showAddItemListDialog(context, provider);
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Generate QR', Icons.qr_code_2_rounded, AppTheme.accentColor, () {
-                          final provider = context.read<InventoryProvider>();
-                          _showGeneratedQRs(context, provider);
-                        })),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: _buildQuickHubCard(context, 'Travel', Icons.local_shipping_rounded, AppTheme.primaryColor, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()));
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Shopping', Icons.shopping_cart_rounded, AppTheme.warningColor, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()));
-                        })),
-                        const SizedBox(width: 12),
-                        Expanded(child: _buildQuickHubCard(context, 'Planner', Icons.task_alt_rounded, AppTheme.accentColor, () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()));
-                        })),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: _sectionHeader(context, 'Box Overview'),
-              ),
-            ),
-
-            if (provider.boxes.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: EmptyStateWidget(
-                  icon: Icons.inventory_2_outlined,
-                  title: 'No boxes yet',
-                  subtitle: 'Tap + to create your first storage box',
-                  action: ElevatedButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen())),
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('New Box'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              )
-            else ...[
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
-                    childAspectRatio: 0.78,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final box = provider.boxes[index];
-                      // Use a composite tag to avoid collisions if duplicate IDs exist in mock data
-                      final heroTag = 'box_${box.id}_$index';
-                      return Hero(
-                        tag: heroTag,
-                        child: BoxCard(
-                          name: box.name?.toString() ?? 'Unnamed Box',
-                          location: box.location?.toString() ?? 'Unknown',
-                          itemCount: box.items.length,
-                          capacity: box.capacity ?? 0,
-                          color: Color(box.colorValue ?? AppTheme.primaryColor.value),
-                          isSelected: provider.selectedBoxIds.contains(box.id),
-                          onTap: () {
-                            if (provider.isMultiSelectMode) {
-                              provider.toggleBoxSelection(box.id);
-                            } else {
-                              provider.accessBox(box);
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box, heroTag: heroTag)));
-                            }
-                          },
-                          onQrTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => QrCodeScreen(box: box))),
-                          onLongPress: () => provider.toggleBoxSelection(box.id),
-                        ),
-                      );
-                    },
-                    childCount: shownBoxes,
-                  ),
-                ),
-              ),
-              if (totalBoxes > shownBoxes)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          final dashboard = context.findAncestorStateOfType<_DashboardScreenState>();
-                          if (dashboard != null) {
-                            dashboard.setState(() => dashboard._currentIndex = 2);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withAlpha(15),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: AppTheme.primaryColor.withAlpha(40)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Text(
-                                'View All Boxes',
-                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.primaryColor),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_rounded, size: 16, color: AppTheme.primaryColor),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
 
             const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
           ],
@@ -788,90 +290,251 @@ class _HomeTab extends StatelessWidget {
       },
     );
   }
+}
 
-  /// Returns how many boxes to show: always a multiple of [cols], capped at 4.
-  int _boxGridCount(int total, int cols) {
-    if (total <= 0) return 0;
-    if (total <= cols) return total;        // 1-2 (or 1-4 on wide screens)
-    final maxShow = 4;
-    final capped = total > maxShow ? maxShow : total;
-    return (capped ~/ cols) * cols;          // round down to even row
-  }
+// ── App Bar Button ────────────────────────────────────────────────────────────
 
-  Widget _buildHorizontalStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
+class _AppBarBtn extends StatelessWidget {
+  final IconData icon;
+  final bool filled;
+  final VoidCallback onTap;
+
+  const _AppBarBtn({required this.icon, required this.onTap, this.filled = false});
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Material(
-      color: Colors.transparent,
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        width: 170,
-        padding: const EdgeInsets.all(22),
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: filled
+              ? AppTheme.primaryColor
+              : (isDark ? Colors.white.withAlpha(12) : Colors.black.withAlpha(8)),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: filled
+              ? [BoxShadow(color: AppTheme.primaryColor.withAlpha(70), blurRadius: 10, offset: const Offset(0, 4))]
+              : null,
+        ),
+        child: Icon(icon, size: 20, color: filled ? Colors.white : (isDark ? Colors.white70 : AppTheme.accentColor)),
+      ),
+    );
+  }
+}
+
+// ── Hero Stats Banner ─────────────────────────────────────────────────────────
+
+class _HeroBanner extends StatelessWidget {
+  final int totalBoxes;
+  final int totalItems;
+  final VoidCallback onTap;
+
+  const _HeroBanner({required this.totalBoxes, required this.totalItems, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.primaryColor, AppTheme.primaryDark],
+          ),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withAlpha(isDark ? 15 : 30), width: 1),
           boxShadow: [
-            BoxShadow(
-              color: color.withAlpha(isDark ? 10 : 15),
-              blurRadius: 24,
-              spreadRadius: 2,
-              offset: const Offset(0, 8),
-            ),
+            BoxShadow(color: AppTheme.primaryColor.withAlpha(80), blurRadius: 24, offset: const Offset(0, 8)),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Stack(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withAlpha(20),
-                borderRadius: BorderRadius.circular(16),
+            // Decorative circles
+            Positioned(
+              right: -30,
+              top: -30,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withAlpha(15),
+                ),
               ),
-              child: Icon(icon, color: color, size: 24),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
+            Positioned(
+              right: 40,
+              bottom: -40,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withAlpha(10),
                 ),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white54 : Colors.black54,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(30),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'Your Inventory',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      _StatPill(label: 'Boxes', value: '$totalBoxes'),
+                      const SizedBox(width: 12),
+                      _StatPill(label: 'Items', value: '$totalItems'),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'View full analytics',
+                        style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(30),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildQuickHubCard(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
+class _StatPill extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatPill({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(25),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withAlpha(40)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Quick Actions Row ─────────────────────────────────────────────────────────
+
+class _QuickActionsRow extends StatelessWidget {
+  final InventoryProvider provider;
+  const _QuickActionsRow({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = [
+      _QuickAction(icon: Icons.add_box_rounded, label: 'Create Box', color: AppTheme.accentColor,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()))),
+      _QuickAction(icon: Icons.add_circle_rounded, label: 'Add Item', color: AppTheme.primaryColor,
+          onTap: () => _showAddItemListDialog(context, provider)),
+      _QuickAction(icon: Icons.qr_code_scanner_rounded, label: 'Scan QR', color: AppTheme.accentColor,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()))),
+      _QuickAction(icon: Icons.qr_code_2_rounded, label: 'Generate QR', color: AppTheme.primaryColor,
+          onTap: () => _showGeneratedQRs(context, provider)),
+    ];
+
+    return Row(
+      children: actions.map((a) => Expanded(
+        child: Padding(
+          padding: EdgeInsets.only(right: actions.indexOf(a) < actions.length - 1 ? 10 : 0),
+          child: _QuickActionTile(action: a),
+        ),
+      )).toList(),
+    );
+  }
+}
+
+class _QuickAction {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _QuickAction({required this.icon, required this.label, required this.color, required this.onTap});
+}
+
+class _QuickActionTile extends StatelessWidget {
+  final _QuickAction action;
+  const _QuickActionTile({required this.action});
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        onTap: action.onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isDark ? Colors.white.withAlpha(10) : color.withAlpha(25)),
+            color: isDark ? const Color(0xFF152540) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? Colors.white.withAlpha(10) : action.color.withAlpha(30),
+            ),
             boxShadow: [
               BoxShadow(
-                color: color.withAlpha(isDark ? 8 : 15),
-                blurRadius: 20,
-                spreadRadius: 0,
-                offset: const Offset(0, 8),
+                color: action.color.withAlpha(isDark ? 8 : 18),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
@@ -879,17 +542,18 @@ class _HomeTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withAlpha(20),
-                  borderRadius: BorderRadius.circular(14),
+                  color: action.color.withAlpha(20),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: color, size: 24),
+                child: Icon(action.icon, color: action.color, size: 20),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
-                label,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                action.label,
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -897,183 +561,39 @@ class _HomeTab extends StatelessWidget {
       ),
     );
   }
-
-  Widget _sectionHeader(BuildContext context, String title, {String? trailing, VoidCallback? onTrailingTap}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-        if (trailing != null)
-          GestureDetector(
-            onTap: onTrailingTap,
-            child: Text(
-              trailing, 
-              style: TextStyle(
-                fontSize: 13, 
-                color: AppTheme.primaryColor, 
-                fontWeight: FontWeight.w600
-              )
-            ),
-          ),
-      ],
-    );
-  }
-  void _showDeleteDialog(BuildContext context, InventoryProvider provider, dynamic box) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Box'),
-        content: Text('Are you sure you want to delete "${box.name}" and all its items?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            TextButton(
-              onPressed: () async {
-                final boxName = box.name ?? 'Box';
-                await provider.deleteBox(box);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('"$boxName" deleted'),
-                      action: SnackBarAction(
-                        label: 'Undo',
-                        onPressed: () => provider.undoDeleteBox(),
-                      ),
-                    ),
-                  );
-                }
-              },
-              style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
-              child: const Text('Delete'),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryCloud(BuildContext context, InventoryProvider provider) {
-    final categories = provider.topCategories;
-    if (categories.isEmpty) return const SizedBox.shrink();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final maxValue = categories.first.value == 0 ? 1 : categories.first.value;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionHeader(context, 'Top Categories'),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10)),
-          ),
-          child: Column(
-            children: categories.asMap().entries.map((entry) {
-              final cat = entry.value;
-              final index = entry.key;
-              final colors = [Colors.blue, Colors.purple, Colors.orange, Colors.teal];
-              final color = colors[index % colors.length];
-              final percentage = (cat.value / maxValue).clamp(0.0, 1.0);
-              final isLast = index == categories.length - 1;
-              
-              return GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BoxesScreen())),
-                child: Container(
-                  margin: EdgeInsets.only(bottom: isLast ? 0 : 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: color.withAlpha(18),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: color.withAlpha(30)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(color: color.withAlpha(36), shape: BoxShape.circle),
-                            child: Center(
-                              child: Text('${index + 1}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color)),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(cat.key, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: color)),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: color.withAlpha(40), borderRadius: BorderRadius.circular(8)),
-                            child: Text('${cat.value}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: color)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: percentage,
-                          minHeight: 6,
-                          color: color,
-                          backgroundColor: color.withAlpha(28),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
 }
 
-// ===== RECENT BOX CHIP =====
-class _RecentBoxChip extends StatelessWidget {
-  final dynamic box;
+// ── Recent Box Card ───────────────────────────────────────────────────────────
 
-  const _RecentBoxChip({required this.box});
+class _RecentBoxCard extends StatelessWidget {
+  final dynamic box;
+  const _RecentBoxCard({required this.box});
 
   @override
   Widget build(BuildContext context) {
-    final color = Color(box.colorValue);
+    final color = Color(box.colorValue ?? AppTheme.primaryColor.value);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
         context.read<InventoryProvider>().accessBox(box);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BoxDetailsScreen(box: box),
-          ),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
       },
       child: Container(
-        width: 140,
+        width: 120,
         margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withAlpha(isDark ? 64 : 51),
-              color.withAlpha(isDark ? 26 : 20),
-            ],
-          ),
+          color: isDark ? const Color(0xFF152540) : Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: color.withAlpha(51),
-          ),
+          border: Border.all(color: color.withAlpha(isDark ? 40 : 35)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withAlpha(isDark ? 15 : 20),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1082,24 +602,17 @@ class _RecentBoxChip extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withAlpha(51),
+                color: color.withAlpha(30),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                Icons.inventory_2_rounded,
-                color: color,
-                size: 20,
-              ),
+              child: Icon(Icons.inventory_2_rounded, color: color, size: 18),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  box.name?.toString() ?? 'Unnamed Box',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  box.name?.toString() ?? 'Unnamed',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1107,10 +620,9 @@ class _RecentBoxChip extends StatelessWidget {
                 Text(
                   '${box.items.length} items',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: isDark
-                        ? Colors.white.withAlpha(128)
-                        : Colors.black.withAlpha(128),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white38 : Colors.black38,
                   ),
                 ),
               ],
@@ -1118,6 +630,126 @@ class _RecentBoxChip extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Tools Grid ────────────────────────────────────────────────────────────────
+
+class _ToolsGrid extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final tools = [
+      _ToolItem(icon: Icons.local_shipping_rounded, label: 'Travel', color: const Color(0xFF2196F3),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()))),
+      _ToolItem(icon: Icons.shopping_cart_rounded, label: 'Shopping', color: AppTheme.warningColor,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()))),
+      _ToolItem(icon: Icons.task_alt_rounded, label: 'Planner', color: AppTheme.successColor,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()))),
+      _ToolItem(icon: Icons.history_rounded, label: 'Activity', color: const Color(0xFF9C27B0),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen()))),
+      _ToolItem(icon: Icons.psychology_outlined, label: 'AI Vision', color: const Color(0xFF00BCD4),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiVisionScreen()))),
+      _ToolItem(icon: Icons.group_rounded, label: 'Share', color: AppTheme.accentColor,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CollaboratorsScreen()))),
+    ];
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.1,
+      children: tools.map((t) => _ToolTile(tool: t)).toList(),
+    );
+  }
+}
+
+class _ToolItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _ToolItem({required this.icon, required this.label, required this.color, required this.onTap});
+}
+
+class _ToolTile extends StatelessWidget {
+  final _ToolItem tool;
+  const _ToolTile({required this.tool});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: tool.onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF152540) : Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: isDark ? Colors.white.withAlpha(10) : tool.color.withAlpha(25)),
+            boxShadow: [
+              BoxShadow(
+                color: tool.color.withAlpha(isDark ? 10 : 20),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  color: tool.color.withAlpha(20),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(tool.icon, color: tool.color, size: 22),
+              ),
+              const SizedBox(height: 9),
+              Text(tool.label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Section Helpers ───────────────────────────────────────────────────────────
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800));
+  }
+}
+
+class _SectionTitleRow extends StatelessWidget {
+  final String title;
+  final String? trailing;
+  final VoidCallback? onTrailing;
+  const _SectionTitleRow({required this.title, this.trailing, this.onTrailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        if (trailing != null)
+          GestureDetector(
+            onTap: onTrailing,
+            child: Text(trailing!, style: const TextStyle(fontSize: 13, color: AppTheme.primaryColor, fontWeight: FontWeight.w600)),
+          ),
+      ],
     );
   }
 }

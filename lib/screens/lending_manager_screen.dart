@@ -56,7 +56,7 @@ class _LendingCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? const Color(0xFF152540) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withAlpha(50)),
         boxShadow: [
