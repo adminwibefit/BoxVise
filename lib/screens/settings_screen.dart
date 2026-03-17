@@ -49,22 +49,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverAppBar.large(
-            expandedHeight: 140,
+          SliverAppBar(
             floating: false,
             pinned: true,
+            elevation: 0,
             backgroundColor: isDark ? const Color(0xFF0D1829) : const Color(0xFFF8FAFC),
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                'Settings',
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1,
-                ),
+            title: const Text(
+              'Settings',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
               ),
-              centerTitle: false,
-              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
             ),
           ),
           SliverToBoxAdapter(
@@ -121,14 +117,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.table_chart_rounded,
                       iconColor: Colors.green,
                       onTap: () => provider.exportToCSV(),
-                    ),
-                    _buildDivider(),
-                    _buildSettingTile(
-                      title: 'Backup Data',
-                      subtitle: '',
-                      icon: Icons.cloud_upload_rounded,
-                      iconColor: Colors.indigo,
-                      onTap: () {},
                     ),
                    ]),
 

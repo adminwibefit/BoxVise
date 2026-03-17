@@ -22,7 +22,7 @@ class ActivityModel {
       'title': title,
       'subtitle': subtitle,
       'timestamp': timestamp.toIso8601String(),
-      'relatedId': relatedId,
+      'related_id': relatedId,
     };
   }
 
@@ -33,7 +33,7 @@ class ActivityModel {
       title: map['title'],
       subtitle: map['subtitle'],
       timestamp: DateTime.tryParse(map['timestamp']) ?? DateTime.now(),
-      relatedId: map['relatedId'],
+      relatedId: map['related_id'] ?? map['relatedId'],
     );
   }
 }

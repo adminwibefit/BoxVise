@@ -108,9 +108,44 @@ class _BoxesScreenState extends State<BoxesScreen> {
                 elevation: 0,
                 expandedHeight: 70,
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                title: const Text('Boxes', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                actions: const [
-                  SizedBox(width: 8),
+                title: provider.selectedBoxIds.isNotEmpty
+                    ? Text('${provider.selectedBoxIds.length} selected',
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800))
+                    : const Text('Boxes', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                leading: provider.selectedBoxIds.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => provider.clearSelection(),
+                      )
+                    : null,
+                actions: [
+                  if (provider.selectedBoxIds.isNotEmpty) ...[
+                    IconButton(
+                      icon: const Icon(Icons.delete_rounded, color: AppTheme.errorColor),
+                      tooltip: 'Delete selected',
+                      onPressed: () => _confirmDeleteSelected(context, provider),
+                    ),
+                  ] else ...[
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert_rounded),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      onSelected: (val) {
+                        if (val == 'download_qr') _downloadAllQrs(context, provider);
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                          value: 'download_qr',
+                          child: Row(
+                            children: [
+                              Icon(Icons.qr_code_2_rounded, size: 20),
+                              SizedBox(width: 12),
+                              Text('Download QR', style: TextStyle(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
 
@@ -321,6 +356,56 @@ class _BoxesScreenState extends State<BoxesScreen> {
   }
 
 
+
+  Future<void> _downloadAllQrs(BuildContext context, InventoryProvider provider) async {
+    if (provider.boxes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No boxes to export'), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Generating QR PDF…'), behavior: SnackBarBehavior.floating),
+    );
+    try {
+      await provider.downloadAllQrsPdf();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $e'), behavior: SnackBarBehavior.floating, backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _confirmDeleteSelected(BuildContext context, InventoryProvider provider) {
+    final count = provider.selectedBoxIds.length;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Boxes'),
+        content: Text(
+          'Delete $count box${count > 1 ? 'es' : ''} and all their items? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              provider.deleteSelectedBoxes();
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('$count box${count > 1 ? 'es' : ''} deleted')),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showSortPicker(BuildContext context, bool isDark) {
     final sorts = ['Recently Added', 'Oldest First', 'Name A-Z', 'Name Z-A', 'Item Count (High)', 'Item Count (Low)'];

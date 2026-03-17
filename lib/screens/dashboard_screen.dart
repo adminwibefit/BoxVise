@@ -7,14 +7,12 @@ import 'box_details_screen.dart';
 import 'stats_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'search_screen.dart';
-import 'ai_vision_screen.dart';
 import 'activity_screen.dart';
 import 'boxes_screen.dart';
 import 'settings_screen.dart';
 import 'add_item_screen.dart';
 import 'qr_code_screen.dart';
 import 'shopping_list_screen.dart';
-import 'collaborators_screen.dart';
 import 'planner_screen.dart';
 import 'travel_screen.dart';
 
@@ -648,10 +646,6 @@ class _ToolsGrid extends StatelessWidget {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()))),
       _ToolItem(icon: Icons.history_rounded, label: 'Activity', color: const Color(0xFF9C27B0),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen()))),
-      _ToolItem(icon: Icons.psychology_outlined, label: 'AI Vision', color: const Color(0xFF00BCD4),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiVisionScreen()))),
-      _ToolItem(icon: Icons.group_rounded, label: 'Share', color: AppTheme.accentColor,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CollaboratorsScreen()))),
     ];
 
     return GridView.count(

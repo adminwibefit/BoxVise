@@ -19,7 +19,7 @@ import '../theme/app_theme.dart';
 class InventoryProvider extends ChangeNotifier {
   List<BoxModel> _boxes = [];
   String _searchQuery = '';
-  bool _isDarkMode = true;
+  bool _isDarkMode = false;
   String _language = 'en';
   bool _usePinLock = false;
   String _appPin = '';
@@ -356,8 +356,7 @@ class InventoryProvider extends ChangeNotifier {
           final existingBox = await DatabaseService.getBoxByUuid(newUuid);
           if (existingBox == null) break;
         }
-        box.uuid = newUuid;
-        await box.save();
+        await DatabaseService.db.update('boxes', {'uuid': newUuid}, where: 'id = ?', whereArgs: [box.id]);
         migrated = true;
       }
     }
@@ -369,7 +368,7 @@ class InventoryProvider extends ChangeNotifier {
     _boxes.sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
     
     // Load persisted settings
-    _isDarkMode = await DatabaseService.getSetting('dark_mode', defaultValue: true);
+    _isDarkMode = await DatabaseService.getSetting('dark_mode', defaultValue: false);
     _language = await DatabaseService.getSetting('language', defaultValue: 'en');
     _usePinLock = await DatabaseService.getSetting('use_pin_lock', defaultValue: false);
     _appPin = await DatabaseService.getSetting('app_pin', defaultValue: '');
@@ -377,12 +376,6 @@ class InventoryProvider extends ChangeNotifier {
     _primaryColor = Color(colorVal);
 
     _showOnboarding = await DatabaseService.getSetting('show_onboarding', defaultValue: true);
-
-    final isFirstLaunch = await DatabaseService.getSetting('is_first_launch', defaultValue: true);
-    if (isFirstLaunch) {
-      await _generateDummyData();
-      await DatabaseService.setSetting('is_first_launch', false);
-    }
 
     await _loadActivities();
     await _loadScanHistory();
@@ -410,53 +403,6 @@ class InventoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _generateDummyData() async {
-    // Box 1: Festival Clothes
-    final box1 = BoxModel(
-      id: "BOX_${_uuid.v4()}",
-      uuid: _uuid.v4(),
-      name: 'Festival Clothes',
-      category: 'Clothing',
-      location: 'Wardrobe',
-      colorValue: const Color(0xFFE91E63).toARGB32(),
-      createdDate: DateTime.now(),
-    );
-    await DatabaseService.addBox(box1);
-    await DatabaseService.addItem(ItemModel(id: _uuid.v4(), name: 'Saree', quantity: 3), box1.id);
-    await DatabaseService.addItem(ItemModel(id: _uuid.v4(), name: 'Kurta', quantity: 2), box1.id);
-
-    // Box 2: Garage Tools
-    final box2 = BoxModel(
-      id: "BOX_${_uuid.v4()}",
-      uuid: _uuid.v4(),
-      name: 'Garage Tools',
-      category: 'Tools',
-      location: 'Garage',
-      colorValue: const Color(0xFF607D8B).toARGB32(),
-      createdDate: DateTime.now(),
-    );
-    await DatabaseService.addBox(box2);
-    await DatabaseService.addItem(ItemModel(id: _uuid.v4(), name: 'Hammer', quantity: 1), box2.id);
-    await DatabaseService.addItem(ItemModel(id: _uuid.v4(), name: 'Screwdriver', quantity: 2), box2.id);
-
-    // Box 3: Documents Box
-    final box3 = BoxModel(
-      id: "BOX_${_uuid.v4()}",
-      uuid: _uuid.v4(),
-      name: 'Documents Box',
-      category: 'Documents',
-      location: 'Study Table',
-      colorValue: const Color(0xFF3F51B5).toARGB32(),
-      createdDate: DateTime.now(),
-    );
-    await DatabaseService.addBox(box3);
-    await DatabaseService.addItem(ItemModel(id: _uuid.v4(), name: 'Passport', quantity: 2), box3.id);
-    await DatabaseService.addItem(ItemModel(id: _uuid.v4(), name: 'Certificates', quantity: 10), box3.id);
-
-    // Reload Data
-    _boxes = await DatabaseService.getAllBoxes();
-    _boxes.sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
-  }
 
   // --- Box CRUD ---
   Future<void> addBox({
@@ -465,6 +411,7 @@ class InventoryProvider extends ChangeNotifier {
     required String category,
     required int colorValue,
     int capacity = 0,
+    String? customQrData,
   }) async {
     String newUuid;
     while (true) {
@@ -482,6 +429,7 @@ class InventoryProvider extends ChangeNotifier {
       colorValue: colorValue,
       capacity: capacity,
       createdDate: DateTime.now(),
+      customQrData: customQrData,
     );
     await DatabaseService.addBox(newBox);
     _boxes.add(newBox);
@@ -851,6 +799,14 @@ class InventoryProvider extends ChangeNotifier {
   BoxModel? findBoxByUuid(String uuid) {
     try {
       return _boxes.firstWhere((box) => box.uuid == uuid);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  BoxModel? findBoxByCustomQr(String qrData) {
+    try {
+      return _boxes.firstWhere((box) => box.customQrData != null && box.customQrData == qrData);
     } catch (_) {
       return null;
     }
@@ -1432,6 +1388,109 @@ class InventoryProvider extends ChangeNotifier {
     await file.writeAsBytes(await pdf.save());
     // ignore: deprecated_member_use
     await Share.shareXFiles([XFile(file.path)], text: 'QR Label for ${box.name}');
+  }
+
+  Future<void> downloadAllQrsPdf() async {
+    final pdf = pw.Document();
+    final boxes = _boxes;
+    const cols = 3;
+    const rows = 4;
+    const perPage = cols * rows; // 12
+
+    for (int pageStart = 0; pageStart < boxes.length; pageStart += perPage) {
+      final pageBoxes = boxes.skip(pageStart).take(perPage).toList();
+
+      // Pad to full grid so layout is consistent
+      while (pageBoxes.length % cols != 0) {
+        pageBoxes.add(pageBoxes.first); // placeholder — hidden via opacity trick
+      }
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(24),
+          build: (pw.Context ctx) {
+            final cells = boxes.skip(pageStart).take(perPage).toList();
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'BoxVise — QR Codes',
+                  style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Generated ${DateTime.now().toLocal().toString().substring(0, 16)}',
+                  style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+                ),
+                pw.SizedBox(height: 16),
+                pw.Expanded(
+                  child: pw.GridView(
+                    crossAxisCount: cols,
+                    childAspectRatio: 0.85,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    children: List.generate(cells.length, (i) {
+                      final box = cells[i];
+                      final qrData = box.customQrData ?? 'Boxvise:${box.uuid ?? box.id}';
+                      final shortId = (box.uuid ?? box.id).length > 12
+                          ? (box.uuid ?? box.id).substring(0, 12).toUpperCase()
+                          : (box.uuid ?? box.id).toUpperCase();
+                      return pw.Container(
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.grey300),
+                          borderRadius: pw.BorderRadius.circular(8),
+                        ),
+                        padding: const pw.EdgeInsets.all(8),
+                        child: pw.Column(
+                          mainAxisAlignment: pw.MainAxisAlignment.center,
+                          crossAxisAlignment: pw.CrossAxisAlignment.center,
+                          children: [
+                            pw.Text(
+                              box.name ?? 'Unnamed Box',
+                              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                              textAlign: pw.TextAlign.center,
+                              maxLines: 2,
+                            ),
+                            pw.SizedBox(height: 6),
+                            pw.BarcodeWidget(
+                              barcode: pw.Barcode.qrCode(),
+                              data: qrData,
+                              width: 90,
+                              height: 90,
+                            ),
+                            pw.SizedBox(height: 6),
+                            pw.Text(
+                              shortId,
+                              style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
+                              textAlign: pw.TextAlign.center,
+                            ),
+                            if ((box.location ?? '').isNotEmpty)
+                              pw.Text(
+                                box.location!,
+                                style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey500),
+                                textAlign: pw.TextAlign.center,
+                                maxLines: 1,
+                              ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    final dir = await getTemporaryDirectory();
+    final path = '${dir.path}/BoxVise_QR_Codes.pdf';
+    final file = File(path);
+    await file.writeAsBytes(await pdf.save());
+    // ignore: deprecated_member_use
+    await Share.shareXFiles([XFile(file.path)], text: 'BoxVise QR Codes');
   }
 
   Future<void> resetAllData() async {

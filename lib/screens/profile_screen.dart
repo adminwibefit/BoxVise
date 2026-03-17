@@ -345,6 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _sectionLabel(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Align(
@@ -354,7 +355,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w800,
-            color: Colors.grey.withAlpha(150),
+            color: isDark ? Colors.white54 : Colors.black45,
             letterSpacing: 1.2,
           ),
         ),
@@ -371,14 +372,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         enabled: _isEditing,
         maxLines: maxLines,
         style: TextStyle(
-          fontSize: 15, 
+          fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: !_isEditing && !isDark ? Colors.black54 : null,
+          color: isDark ? Colors.white : Colors.black87,
         ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : Colors.black38, fontWeight: FontWeight.w500),
-          prefixIcon: Icon(icon, size: 20, color: AppTheme.primaryColor.withAlpha(150)),
+          labelStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : Colors.black54, fontWeight: FontWeight.w600),
+          prefixIcon: Icon(icon, size: 20, color: AppTheme.primaryColor),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),

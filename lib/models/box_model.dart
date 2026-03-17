@@ -3,11 +3,12 @@ import '../services/database_service.dart';
 
 class BoxModel {
   final String id;
-  String? uuid;
+  final String? uuid;         // permanent — never changes after creation
+  final String? customQrData; // permanent — never changes after creation
+  final DateTime createdDate;
   String? name;
   String? location;
   int? colorValue;
-  final DateTime createdDate;
   List<ItemModel> items;
   DateTime? lastAccessedDate;
   int? capacity;
@@ -19,10 +20,11 @@ class BoxModel {
   BoxModel({
     required this.id,
     this.uuid,
+    this.customQrData,
+    required this.createdDate,
     this.name,
     this.location,
     this.colorValue,
-    required this.createdDate,
     this.category = 'Other',
     this.imagePath,
     this.isFavorite = false,
@@ -65,6 +67,7 @@ class BoxModel {
       'category': category,
       'imagePath': imagePath,
       'isFavorite': isFavorite ? 1 : 0,
+      'custom_qr_data': customQrData,
     };
   }
 
@@ -82,6 +85,7 @@ class BoxModel {
       category: map['category'],
       imagePath: map['imagePath'],
       isFavorite: map['isFavorite'] == 1,
+      customQrData: map['custom_qr_data'],
       items: items ?? [],
     );
   }

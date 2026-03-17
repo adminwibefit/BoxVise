@@ -131,6 +131,11 @@ class _SearchScreenState extends State<SearchScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final provider = context.watch<InventoryProvider>();
     final isSearching = _searchCtrl.text.isNotEmpty || _selectedTags.isNotEmpty || _selectedLocations.isNotEmpty || _selectedBoxId != null || _quantityCategory != null || _dateFilter != null;
+    final allItemEntries = provider.boxes
+        .expand((b) => b.items.map((i) => <String, dynamic>{'item': i, 'box': b}))
+        .take(20)
+        .toList();
+    final totalItemCount = provider.boxes.fold<int>(0, (sum, b) => sum + b.items.length);
 
     return Scaffold(
       body: CustomScrollView(
@@ -176,23 +181,165 @@ class _SearchScreenState extends State<SearchScreen> {
         
 
 
-        // ── Empty / idle state ──────────────────────────────────────────
-        if (!isSearching && _searchCtrl.text.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search_rounded, size: 72, color: Colors.grey.withAlpha(50)),
-                const SizedBox(height: 20),
-                const Text('Find Anything',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.grey)),
-                const SizedBox(height: 8),
-                const Text('Type to search boxes or items',
-                    style: TextStyle(color: Colors.grey, fontSize: 13)),
-              ],
+        // ── Idle state: Recent + Categories ────────────────────────────
+        if (!isSearching && _searchCtrl.text.isEmpty) ...[
+          // Recent Boxes
+          if (provider.boxes.isNotEmpty) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Recent Boxes',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : Colors.black87)),
+                    Text('${provider.boxes.length} total',
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
+                  ],
+                ),
+              ),
             ),
-          )
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: provider.boxes.take(8).length,
+                  itemBuilder: (ctx, i) {
+                    final box = provider.boxes[i];
+                    final color = Color(box.colorValue ?? AppTheme.primaryColor.toARGB32());
+                    return GestureDetector(
+                      onTap: () {
+                        provider.accessBox(box);
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
+                      },
+                      child: Container(
+                        width: 90,
+                        margin: const EdgeInsets.only(right: 10),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF152540) : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: color.withAlpha(50)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withAlpha(isDark ? 20 : 15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color.withAlpha(25),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.inventory_2_rounded, size: 18, color: color),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              box.name ?? 'Box',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                            ),
+                            Text(
+                              '${box.items.length} items',
+                              style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          ],
+
+          // Browse by Category
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              child: Text('Browse by Category',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : Colors.black87)),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 2.4,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              delegate: SliverChildListDelegate(
+                _buildCategoryChips(provider, isDark),
+              ),
+            ),
+          ),
+
+          // All Items preview
+          if (allItemEntries.isNotEmpty) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('All Items',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : Colors.black87)),
+                    Text('$totalItemCount total',
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (ctx, i) {
+                    final item = allItemEntries[i]['item'] as ItemModel;
+                    final box = allItemEntries[i]['box'] as BoxModel;
+                    final color = Color(box.colorValue ?? AppTheme.primaryColor.toARGB32());
+                    return _ItemResultCard(
+                      item: item,
+                      box: box,
+                      color: color,
+                      isDark: isDark,
+                      onTap: () {
+                        provider.accessBox(box);
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
+                      },
+                    );
+                  },
+                  childCount: allItemEntries.length,
+                ),
+              ),
+            ),
+          ],
+        ]
 
         // ── No results ──────────────────────────────────────────────────
         else if (_results.isEmpty && _boxResults.isEmpty)
@@ -288,6 +435,67 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
 
+
+  List<Widget> _buildCategoryChips(InventoryProvider provider, bool isDark) {
+    final categoryCounts = <String, int>{};
+    for (final box in provider.boxes) {
+      final cat = box.category ?? 'Other';
+      categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1;
+    }
+    if (categoryCounts.isEmpty) {
+      return [
+        _categoryChip('All', Icons.apps_rounded, provider.boxes.length, AppTheme.primaryColor, isDark, () {}),
+      ];
+    }
+    return categoryCounts.entries.map((e) {
+      return _categoryChip(e.key, _categoryIcon(e.key), e.value, AppTheme.primaryColor, isDark, () {
+        setState(() {
+          _searchCtrl.text = e.key;
+          _performSearch();
+        });
+      });
+    }).toList();
+  }
+
+  IconData _categoryIcon(String cat) {
+    switch (cat.toLowerCase()) {
+      case 'clothing': return Icons.checkroom_rounded;
+      case 'tools': return Icons.build_rounded;
+      case 'documents': return Icons.description_rounded;
+      case 'kitchen': return Icons.kitchen_rounded;
+      case 'electronics': return Icons.devices_rounded;
+      case 'books': return Icons.menu_book_rounded;
+      default: return Icons.category_rounded;
+    }
+  }
+
+  Widget _categoryChip(String label, IconData icon, int count, Color color, bool isDark, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF152540) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withAlpha(40)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: isDark ? Colors.white70 : Colors.black87)),
+            ),
+            const SizedBox(width: 4),
+            Text('$count', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(

@@ -102,6 +102,9 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
                             onTap: () => _showShareSheet(context, provider)),
                         _NavBtn(icon: Icons.edit_rounded, isDark: isDark,
                             onTap: () => _showEditBoxDialog(context, provider)),
+                        _NavBtn(icon: Icons.delete_rounded, isDark: isDark,
+                            iconColor: AppTheme.errorColor,
+                            onTap: () => _showDeleteBoxDialog(context, provider)),
                         const SizedBox(width: 8),
                       ],
               ),
@@ -295,6 +298,35 @@ class _BoxDetailsScreenState extends State<BoxDetailsScreen> {
           ),
         );
       },
+    );
+  }
+
+  // ── Delete box ────────────────────────────────────────────────────────────
+  void _showDeleteBoxDialog(BuildContext context, InventoryProvider provider) {
+    final box = widget.box;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Box'),
+        content: Text(
+          'Delete "${box.name ?? 'this box'}" and all ${box.items.length} item${box.items.length != 1 ? 's' : ''} inside? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              Navigator.pop(context); // go back to Boxes screen
+              await provider.deleteBox(box);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 

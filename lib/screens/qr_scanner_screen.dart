@@ -44,6 +44,20 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         } else {
           _navigateToBox(uuid);
         }
+      } else if (!widget.returnMode) {
+        // Try matching by custom QR data
+        final provider = context.read<InventoryProvider>();
+        final customBox = provider.findBoxByCustomQr(rawValue);
+        if (customBox != null) {
+          provider.logScan(customBox.id, customBox.name ?? 'Unknown');
+          provider.accessBox(customBox);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: customBox)),
+          );
+        } else {
+          _showInvalidQRDialog();
+        }
       } else {
         _showInvalidQRDialog();
       }

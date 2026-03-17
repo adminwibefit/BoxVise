@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Boxwise</string>
+	<string>BoxVise</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>boxwise</string>
+	<string>BoxVise</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -53,5 +53,7 @@
 	<string>Boxwise needs microphone access to enable voice search</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Boxwise uses speech recognition to search by voice</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Boxwise uses Face ID to keep your inventory secure</string>
 </dict>
 </plist>

@@ -17,7 +17,7 @@ class DatabaseService {
 
     _db = await openDatabase(
       path,
-      version: 9,
+      version: 10,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE boxes ADD COLUMN uuid TEXT');
@@ -97,6 +97,9 @@ class DatabaseService {
           await db.execute('ALTER TABLE travel_boxes ADD COLUMN box_name TEXT');
           await db.execute('ALTER TABLE travel_boxes ADD COLUMN location TEXT');
         }
+        if (oldVersion < 10) {
+          await db.execute('ALTER TABLE boxes ADD COLUMN custom_qr_data TEXT');
+        }
       },
       onCreate: (db, version) async {
         // Boxes Table
@@ -113,7 +116,8 @@ class DatabaseService {
             orderIndex INTEGER,
             category TEXT,
             imagePath TEXT,
-            isFavorite INTEGER
+            isFavorite INTEGER,
+            custom_qr_data TEXT
           )
         ''');
 
@@ -227,6 +231,17 @@ class DatabaseService {
         ''');
       },
     );
+
+    // Explicit column migration — check with PRAGMA before altering
+    await _ensureColumn('boxes', 'custom_qr_data', 'TEXT');
+  }
+
+  static Future<void> _ensureColumn(String table, String column, String type) async {
+    final info = await _db!.rawQuery("PRAGMA table_info('$table')");
+    final exists = info.any((row) => row['name'] == column);
+    if (!exists) {
+      await _db!.execute('ALTER TABLE $table ADD COLUMN $column $type');
+    }
   }
 
   static Database get db {
