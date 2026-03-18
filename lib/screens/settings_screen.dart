@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -5,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/inventory_provider.dart';
+import '../services/database_service.dart';
 import '../theme/app_theme.dart';
 import 'scan_history_screen.dart';
 import 'feature_center_screen.dart';
@@ -22,11 +24,14 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   String _version = '1.0.0';
   String _buildNumber = '1';
+  String _profileName = '';
+  String? _profilePhoto;
 
   @override
   void initState() {
     super.initState();
     _initPackageInfo();
+    _loadProfile();
   }
 
   Future<void> _initPackageInfo() async {
@@ -35,6 +40,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _version = info.version;
         _buildNumber = info.buildNumber;
+      });
+    }
+  }
+
+  Future<void> _loadProfile() async {
+    final name = await DatabaseService.getSetting('profile_name', defaultValue: '');
+    final photo = await DatabaseService.getSetting('profile_photo', defaultValue: '');
+    if (mounted) {
+      setState(() {
+        _profileName = name;
+        _profilePhoto = photo.isEmpty ? null : photo;
       });
     }
   }
@@ -70,15 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                    _buildSectionHeader('PROFILE'),
-                   _buildSectionCard([
-                    _buildSettingTile(
-                      title: 'Profile',
-                      subtitle: '',
-                      icon: Icons.person_rounded,
-                      iconColor: AppTheme.primaryColor,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-                    ),
-                   ]),
+                   _buildProfileCard(isDark),
 
                    _buildSectionHeader('APPEARANCE'),
                    _buildSectionCard([
@@ -192,6 +200,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(bool isDark) {
+    final hasPhoto = _profilePhoto != null && File(_profilePhoto!).existsSync();
+    final displayName = _profileName.isEmpty ? 'Your Name' : _profileName;
+
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+        _loadProfile(); // Reload after returning from profile screen
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF152540) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5)),
+          boxShadow: isDark ? [] : [
+            BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 40, offset: const Offset(0, 10)),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Profile photo
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primaryColor.withAlpha(20),
+                border: Border.all(color: AppTheme.primaryColor.withAlpha(30), width: 2),
+                image: hasPhoto
+                    ? DecorationImage(image: FileImage(File(_profilePhoto!)), fit: BoxFit.cover)
+                    : null,
+              ),
+              child: hasPhoto
+                  ? null
+                  : const Icon(Icons.person_rounded, color: AppTheme.primaryColor, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(displayName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text(
+                    _profileName.isEmpty ? 'Tap to set up your profile' : 'Edit profile',
+                    style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: isDark ? Colors.white24 : Colors.black26, size: 20),
+          ],
+        ),
       ),
     );
   }

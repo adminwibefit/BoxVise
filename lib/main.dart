@@ -6,7 +6,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/database_service.dart';
 import 'theme/app_theme.dart';
-import 'screens/pin_lock_screen.dart';
+// Pin lock removed
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,9 +38,9 @@ class BoxviseApp extends StatelessWidget {
             theme: AppTheme.getLightTheme(provider.primaryColor),
             darkTheme: AppTheme.getDarkTheme(provider.primaryColor),
             themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            home: provider.showOnboarding 
-                ? const OnboardingScreen() 
-                : const PinLockScreen(child: DashboardScreen()),
+            home: provider.showOnboarding
+                ? const OnboardingScreen()
+                : const DashboardScreen(),
           );
         },
       ),

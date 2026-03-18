@@ -12,6 +12,7 @@ import 'boxes_screen.dart';
 import 'settings_screen.dart';
 import 'add_item_screen.dart';
 import 'qr_code_screen.dart';
+import 'qr_sheet_screen.dart';
 import 'shopping_list_screen.dart';
 import 'planner_screen.dart';
 import 'travel_screen.dart';
@@ -85,7 +86,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     );
   }
-
 }
 
 // ── Top-level helpers ─────────────────────────────────────────────────────────
@@ -132,25 +132,79 @@ void _showAddItemListDialog(BuildContext context, InventoryProvider provider) {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please create a box first.')));
     return;
   }
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   showModalBottomSheet(
     context: context,
+    backgroundColor: isDark ? const Color(0xFF152540) : Colors.white,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (ctx) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Padding(
-          padding: EdgeInsets.all(20),
-          child: Text('Select a box to add item to', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
+        Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.black12, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 16),
+        const Text('Select a box to add item', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text('or scan a box QR code', style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
+        const SizedBox(height: 12),
+        // Scan QR button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.pop(ctx);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()));
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withAlpha(12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.primaryColor.withAlpha(40)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.qr_code_scanner_rounded, color: AppTheme.primaryColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Scan Box QR', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.primaryColor)),
+                ],
+              ),
+            ),
+          ),
         ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.black12)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text('or pick a box', style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black38)),
+              ),
+              Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.black12)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
         Expanded(
           child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             itemCount: provider.boxes.length,
             itemBuilder: (c, i) {
               final box = provider.boxes[i];
+              final color = Color(box.colorValue ?? AppTheme.primaryColor.value);
               return ListTile(
-                leading: Icon(Icons.inventory_2_rounded, color: Color(box.colorValue ?? AppTheme.primaryColor.value)),
-                title: Text(box.name?.toString() ?? 'Unnamed Box'),
-                subtitle: Text(box.location?.toString() ?? 'Unknown'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: color.withAlpha(20), borderRadius: BorderRadius.circular(10)),
+                  child: Icon(Icons.inventory_2_rounded, color: color, size: 20),
+                ),
+                title: Text(box.name?.toString() ?? 'Unnamed Box', style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(box.location?.toString() ?? 'Unknown', style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
+                trailing: Icon(Icons.chevron_right_rounded, size: 20, color: isDark ? Colors.white24 : Colors.black26),
                 onTap: () {
                   Navigator.pop(ctx);
                   Navigator.push(context, MaterialPageRoute(builder: (_) => AddItemScreen(box: box)));
@@ -169,6 +223,13 @@ void _showAddItemListDialog(BuildContext context, InventoryProvider provider) {
 class _HomeTab extends StatelessWidget {
   const _HomeTab();
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<InventoryProvider>(
@@ -177,6 +238,7 @@ class _HomeTab extends StatelessWidget {
         final recentBoxes = provider.recentBoxes;
         final totalItems = provider.totalItems;
         final totalBoxes = provider.boxes.length;
+        final isEmpty = totalBoxes == 0;
 
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -207,10 +269,7 @@ class _HomeTab extends StatelessWidget {
                       ),
                       children: const [
                         TextSpan(text: 'BOX'),
-                        TextSpan(
-                          text: 'VISE',
-                          style: TextStyle(color: AppTheme.primaryColor),
-                        ),
+                        TextSpan(text: 'VISE', style: TextStyle(color: AppTheme.primaryColor)),
                       ],
                     ),
                   ),
@@ -238,19 +297,48 @@ class _HomeTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    // ── Hero Stats Banner ──
-                    _HeroBanner(
-                      totalBoxes: totalBoxes,
-                      totalItems: totalItems,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
-                    ),
-                    const SizedBox(height: 28),
+                    // ── Empty State ──
+                    if (isEmpty) ...[
+                      Text(
+                        _getGreeting(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white54 : Colors.black45,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Let\'s organize your stuff!',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                      ),
+                      const SizedBox(height: 20),
+                      _EmptyStateBanner(
+                        onCreateBox: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CreateBoxScreen()),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // ── Hero Banner with Stats (when has boxes) ──
+                    if (!isEmpty) ...[
+                      _HeroBanner(
+                        greeting: _getGreeting(),
+                        totalBoxes: totalBoxes,
+                        totalItems: totalItems,
+                        onAnalytics: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
+                        onCreateBox: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen())),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
 
                     // ── Quick Actions ──
                     const _SectionTitle('Quick Actions'),
                     const SizedBox(height: 14),
-                    _QuickActionsRow(provider: provider),
-                    const SizedBox(height: 28),
+                    _QuickActionsGrid(provider: provider),
+                    const SizedBox(height: 24),
 
                     // ── Recent Boxes ──
                     if (recentBoxes.isNotEmpty) ...[
@@ -261,7 +349,7 @@ class _HomeTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       SizedBox(
-                        height: 130,
+                        height: 140,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
@@ -269,13 +357,13 @@ class _HomeTab extends StatelessWidget {
                           itemBuilder: (_, i) => _RecentBoxCard(box: recentBoxes[i]),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
                     ],
 
-                    // ── Tools Grid ──
-                    const _SectionTitle('Explore'),
+                    // ── Tools ──
+                    const _SectionTitle('Tools'),
                     const SizedBox(height: 14),
-                    _ToolsGrid(),
+                    _ToolsList(),
                     const SizedBox(height: 8),
                   ],
                 ),
@@ -322,147 +410,149 @@ class _AppBarBtn extends StatelessWidget {
   }
 }
 
-// ── Hero Stats Banner ─────────────────────────────────────────────────────────
+// ── Hero Banner (has data) ────────────────────────────────────────────────────
 
 class _HeroBanner extends StatelessWidget {
+  final String greeting;
   final int totalBoxes;
   final int totalItems;
-  final VoidCallback onTap;
+  final VoidCallback onAnalytics;
+  final VoidCallback onCreateBox;
 
-  const _HeroBanner({required this.totalBoxes, required this.totalItems, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppTheme.primaryColor, AppTheme.primaryDark],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(color: AppTheme.primaryColor.withAlpha(80), blurRadius: 24, offset: const Offset(0, 8)),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Decorative circles
-            Positioned(
-              right: -30,
-              top: -30,
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withAlpha(15),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 40,
-              bottom: -40,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withAlpha(10),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(30),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Your Inventory',
-                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      _StatPill(label: 'Boxes', value: '$totalBoxes'),
-                      const SizedBox(width: 12),
-                      _StatPill(label: 'Items', value: '$totalItems'),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'View full analytics',
-                        style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(30),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatPill extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _StatPill({required this.label, required this.value});
+  const _HeroBanner({
+    required this.greeting,
+    required this.totalBoxes,
+    required this.totalItems,
+    required this.onAnalytics,
+    required this.onCreateBox,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      width: double.infinity,
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(25),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withAlpha(40)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.primaryColor, AppTheme.primaryDark],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: AppTheme.primaryColor.withAlpha(80), blurRadius: 24, offset: const Offset(0, 10)),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-              height: 1.0,
+          // Decorative circles
+          Positioned(
+            right: -30,
+            top: -30,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withAlpha(12)),
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 11, fontWeight: FontWeight.w600),
+          Positioned(
+            right: 40,
+            bottom: -40,
+            child: Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withAlpha(8)),
+            ),
+          ),
+          Positioned(
+            left: -20,
+            bottom: -20,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withAlpha(6)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Greeting row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            greeting,
+                            style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Your Inventory',
+                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: onAnalytics,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(20),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withAlpha(15)),
+                        ),
+                        child: const Icon(Icons.analytics_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                // Stats row
+                Row(
+                  children: [
+                    _StatChip(
+                      icon: Icons.inventory_2_rounded,
+                      value: '$totalBoxes',
+                      label: totalBoxes == 1 ? 'Box' : 'Boxes',
+                    ),
+                    const SizedBox(width: 10),
+                    _StatChip(
+                      icon: Icons.category_rounded,
+                      value: '$totalItems',
+                      label: totalItems == 1 ? 'Item' : 'Items',
+                    ),
+                    const Spacer(),
+                    // Add box button
+                    GestureDetector(
+                      onTap: onCreateBox,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.add_rounded, color: AppTheme.primaryDark, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              'New Box',
+                              style: TextStyle(color: AppTheme.primaryDark, fontSize: 12, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -470,90 +560,253 @@ class _StatPill extends StatelessWidget {
   }
 }
 
-// ── Quick Actions Row ─────────────────────────────────────────────────────────
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
 
-class _QuickActionsRow extends StatelessWidget {
-  final InventoryProvider provider;
-  const _QuickActionsRow({required this.provider});
+  const _StatChip({required this.icon, required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    final actions = [
-      _QuickAction(icon: Icons.add_box_rounded, label: 'Create Box', color: AppTheme.accentColor,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen()))),
-      _QuickAction(icon: Icons.add_circle_rounded, label: 'Add Item', color: AppTheme.primaryColor,
-          onTap: () => _showAddItemListDialog(context, provider)),
-      _QuickAction(icon: Icons.qr_code_scanner_rounded, label: 'Scan QR', color: AppTheme.accentColor,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen()))),
-      _QuickAction(icon: Icons.qr_code_2_rounded, label: 'Generate QR', color: AppTheme.primaryColor,
-          onTap: () => _showGeneratedQRs(context, provider)),
-    ];
-
-    return Row(
-      children: actions.map((a) => Expanded(
-        child: Padding(
-          padding: EdgeInsets.only(right: actions.indexOf(a) < actions.length - 1 ? 10 : 0),
-          child: _QuickActionTile(action: a),
-        ),
-      )).toList(),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(18),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withAlpha(20)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white.withAlpha(200), size: 15),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, height: 1.0),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 11, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _QuickAction {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _QuickAction({required this.icon, required this.label, required this.color, required this.onTap});
-}
+// ── Empty State Banner ────────────────────────────────────────────────────────
 
-class _QuickActionTile extends StatelessWidget {
-  final _QuickAction action;
-  const _QuickActionTile({required this.action});
+class _EmptyStateBanner extends StatelessWidget {
+  final VoidCallback onCreateBox;
+
+  const _EmptyStateBanner({required this.onCreateBox});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: action.onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF152540) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? Colors.white.withAlpha(10) : action.color.withAlpha(30),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [const Color(0xFF1A2D4A), const Color(0xFF152540)]
+              : [AppTheme.primaryColor.withAlpha(10), AppTheme.accentColor.withAlpha(8)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white.withAlpha(10) : AppTheme.primaryColor.withAlpha(20),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withAlpha(20),
+              shape: BoxShape.circle,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: action.color.withAlpha(isDark ? 8 : 18),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
+            child: const Icon(Icons.inventory_2_rounded, color: AppTheme.primaryColor, size: 40),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: action.color.withAlpha(20),
-                  borderRadius: BorderRadius.circular(12),
+          const SizedBox(height: 16),
+          const Text(
+            'Start by creating your first box',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Create a box for each storage container,\nthen add items inside.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white54 : Colors.black45,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: onCreateBox,
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text('Create Your First Box', style: TextStyle(fontWeight: FontWeight.w700)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Quick Actions Grid (2x2) ──────────────────────────────────────────────────
+
+class _QuickActionsGrid extends StatelessWidget {
+  final InventoryProvider provider;
+  const _QuickActionsGrid({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasBoxes = provider.boxes.isNotEmpty;
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionCard(
+                icon: Icons.add_box_rounded,
+                label: 'Create Box',
+                subtitle: 'New container',
+                color: AppTheme.primaryColor,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateBoxScreen())),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickActionCard(
+                icon: Icons.add_circle_rounded,
+                label: 'Add Item',
+                subtitle: hasBoxes ? 'To a box' : 'Create a box first',
+                color: AppTheme.accentColor,
+                onTap: hasBoxes ? () => _showAddItemListDialog(context, provider) : null,
+                disabled: !hasBoxes,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionCard(
+                icon: Icons.qr_code_scanner_rounded,
+                label: 'Scan QR',
+                subtitle: 'Find a box',
+                color: const Color(0xFF7C4DFF),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScannerScreen())),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickActionCard(
+                icon: Icons.qr_code_2_rounded,
+                label: 'All QRs',
+                subtitle: 'View & print',
+                color: Colors.teal,
+                onTap: hasBoxes ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QrSheetScreen())) : null,
+                disabled: !hasBoxes,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color color;
+  final VoidCallback? onTap;
+  final bool disabled;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.color,
+    this.onTap,
+    this.disabled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveColor = disabled ? Colors.grey.shade400 : color;
+
+    return Opacity(
+      opacity: disabled ? 0.7 : 1.0,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: disabled ? null : onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF152540) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: effectiveColor.withAlpha(isDark ? 30 : 25)),
+              boxShadow: disabled
+                  ? null
+                  : [
+                      BoxShadow(color: effectiveColor.withAlpha(isDark ? 8 : 15), blurRadius: 12, offset: const Offset(0, 4)),
+                    ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: effectiveColor.withAlpha(20),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: effectiveColor, size: 22),
                 ),
-                child: Icon(action.icon, color: action.color, size: 20),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                action.label,
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white38 : Colors.black38,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 18, color: isDark ? Colors.white24 : Colors.black26),
+              ],
+            ),
           ),
         ),
       ),
@@ -578,7 +831,7 @@ class _RecentBoxCard extends StatelessWidget {
         Navigator.push(context, MaterialPageRoute(builder: (_) => BoxDetailsScreen(box: box)));
       },
       child: Container(
-        width: 120,
+        width: 130,
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -586,11 +839,7 @@ class _RecentBoxCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: color.withAlpha(isDark ? 40 : 35)),
           boxShadow: [
-            BoxShadow(
-              color: color.withAlpha(isDark ? 15 : 20),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
+            BoxShadow(color: color.withAlpha(isDark ? 15 : 20), blurRadius: 14, offset: const Offset(0, 5)),
           ],
         ),
         child: Column(
@@ -603,7 +852,7 @@ class _RecentBoxCard extends StatelessWidget {
                 color: color.withAlpha(30),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.inventory_2_rounded, color: color, size: 18),
+              child: Icon(Icons.inventory_2_rounded, color: color, size: 20),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,30 +881,32 @@ class _RecentBoxCard extends StatelessWidget {
   }
 }
 
-// ── Tools Grid ────────────────────────────────────────────────────────────────
+// ── Tools List (horizontal scrollable) ────────────────────────────────────────
 
-class _ToolsGrid extends StatelessWidget {
+class _ToolsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final tools = [
-      _ToolItem(icon: Icons.local_shipping_rounded, label: 'Travel', color: const Color(0xFF2196F3),
+      _ToolItem(icon: Icons.local_shipping_rounded, label: 'Travel', desc: 'Packing lists', color: const Color(0xFF2196F3),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TravelScreen()))),
-      _ToolItem(icon: Icons.shopping_cart_rounded, label: 'Shopping', color: AppTheme.warningColor,
+      _ToolItem(icon: Icons.shopping_cart_rounded, label: 'Shopping', desc: 'Shopping lists', color: AppTheme.warningColor,
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShoppingListScreen()))),
-      _ToolItem(icon: Icons.task_alt_rounded, label: 'Planner', color: AppTheme.successColor,
+      _ToolItem(icon: Icons.task_alt_rounded, label: 'Planner', desc: 'Task planning', color: AppTheme.successColor,
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlannerScreen()))),
-      _ToolItem(icon: Icons.history_rounded, label: 'Activity', color: const Color(0xFF9C27B0),
+      _ToolItem(icon: Icons.history_rounded, label: 'Activity', desc: 'Recent actions', color: const Color(0xFF9C27B0),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen()))),
     ];
 
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 3,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.1,
-      children: tools.map((t) => _ToolTile(tool: t)).toList(),
+    return SizedBox(
+      height: 110,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: tools.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _ToolCard(tool: tools[i], isDark: isDark),
+      ),
     );
   }
 }
@@ -663,49 +914,59 @@ class _ToolsGrid extends StatelessWidget {
 class _ToolItem {
   final IconData icon;
   final String label;
+  final String desc;
   final Color color;
   final VoidCallback onTap;
-  const _ToolItem({required this.icon, required this.label, required this.color, required this.onTap});
+  const _ToolItem({required this.icon, required this.label, required this.desc, required this.color, required this.onTap});
 }
 
-class _ToolTile extends StatelessWidget {
+class _ToolCard extends StatelessWidget {
   final _ToolItem tool;
-  const _ToolTile({required this.tool});
+  final bool isDark;
+  const _ToolCard({required this.tool, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: tool.onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
+          width: 140,
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF152540) : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: isDark ? Colors.white.withAlpha(10) : tool.color.withAlpha(25)),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: tool.color.withAlpha(isDark ? 25 : 20)),
             boxShadow: [
-              BoxShadow(
-                color: tool.color.withAlpha(isDark ? 10 : 20),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
+              BoxShadow(color: tool.color.withAlpha(isDark ? 8 : 12), blurRadius: 10, offset: const Offset(0, 3)),
             ],
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(11),
-                decoration: BoxDecoration(
-                  color: tool.color.withAlpha(20),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(tool.icon, color: tool.color, size: 22),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: tool.color.withAlpha(20),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(tool.icon, color: tool.color, size: 18),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 12, color: isDark ? Colors.white24 : Colors.black26),
+                ],
               ),
-              const SizedBox(height: 9),
-              Text(tool.label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              Text(tool.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              Text(
+                tool.desc,
+                style: TextStyle(fontSize: 10, color: isDark ? Colors.white38 : Colors.black38),
+              ),
             ],
           ),
         ),
